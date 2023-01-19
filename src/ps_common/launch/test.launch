@@ -1,0 +1,6 @@
+<launch>
+    <rosparam file="$(env HOME)/plantsense-data/param/plantsense.yaml" command="load" />
+
+    <node pkg="ps_interface" type="interface_mysql.py" name="interface_mysql" output="screen" />
+    <node pkg="ps_interface" type="interface_gateway.py" name="interface_gateway" output="screen" />
+</launch>
