@@ -1,0 +1,5 @@
+string name
+int32 value
+string quality
+string timestamp
+---
