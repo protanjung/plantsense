@@ -1,0 +1,23 @@
+<launch>
+    <arg name="data_path" default="$(env HOME)/plantsense-data" />
+
+    <!--  -->
+
+    <arg name="log_path" value="$(arg data_path)/log" />
+    <arg name="param_path" value="$(arg data_path)/param" />
+    <param name="log_path" value="$(arg log_path)" />
+    <param name="param_path" value="$(arg param_path)" />
+
+    <!--  -->
+
+    <rosparam file="$(arg param_path)/plantsense.yaml" command="load" />
+
+    <include file="$(find ps_ros_lib)/launch/ps_ros_lib.launch">
+        <arg name="log_path" value="$(arg log_path)" />
+    </include>
+
+    <!--  -->
+
+    <node pkg="ps_interface" type="interface_database.py" name="interface_database" output="screen" />
+    <node pkg="ps_interface" type="interface_gateway.py" name="interface_gateway" output="screen" />
+</launch>
