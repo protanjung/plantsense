@@ -1,0 +1,3 @@
+[submodule "src/ps_ros_lib"]
+	path = src/ps_ros_lib
+	url = https://github.com/protanjung/ps_ros_lib.git
