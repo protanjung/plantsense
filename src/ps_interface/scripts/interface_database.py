@@ -56,6 +56,9 @@ class interface_database:
         self._log.info("Database User: " + self.db_user)
         self._log.info("Database Password: " + self.db_password)
 
+        # Initializing the database.
+        self.database_initialize()
+
         return 0
 
     def database_routine(self):
@@ -70,7 +73,8 @@ class interface_database:
                 host=self.db_host,
                 port=self.db_port,
                 user=self.db_user,
-                password=self.db_password
+                password=self.db_password,
+                database=self.db_database
             )
             self.mycursor = self.mydb.cursor()
         except Exception as e:
@@ -103,6 +107,71 @@ class interface_database:
                 return -1
         except Exception as e:
             self._log.error("Database insert data error: " + str(e))
+            return -1
+
+        return 0
+
+    def database_initialize(self):
+        sqls = [
+            "CREATE TABLE IF NOT EXISTS `tbl_data` ( \
+                `id` int NOT NULL AUTO_INCREMENT, \
+                `name` varchar(255) NOT NULL, \
+                `value` float NOT NULL, \
+                `timestamp` datetime NOT NULL, \
+                PRIMARY KEY (`id`) \
+            ) ;",
+            "CREATE TABLE IF NOT EXISTS `tbl_event` ( \
+                `id` int NOT NULL AUTO_INCREMENT, \
+                `name` varchar(255) NOT NULL, \
+                `value` float NOT NULL, \
+                `timestamp` datetime NOT NULL, \
+                PRIMARY KEY (`id`) \
+            ) ;",
+            "CREATE TABLE IF NOT EXISTS `tbl_meta` ( \
+                `id` int NOT NULL AUTO_INCREMENT, \
+                `name` varchar(255) NOT NULL, \
+                `description` varchar(255) NOT NULL, \
+                `unit` varchar(255) NOT NULL, \
+                PRIMARY KEY (`id`) \
+            ) ;",
+            "CREATE OR REPLACE VIEW `view_data` AS \
+            SELECT \
+                `tbl_data`.`id` AS `id`, \
+                `tbl_data`.`name` AS `name`, \
+                `tbl_data`.`value` AS `value`, \
+                `tbl_data`.`timestamp` AS `timestamp`, \
+                `tbl_meta`.`description` AS `description`, \
+                `tbl_meta`.`unit` AS `unit` \
+            FROM \
+                `tbl_data` \
+                LEFT JOIN `tbl_meta` ON `tbl_data`.`name` = `tbl_meta`.`name` \
+            ;",
+            "CREATE OR REPLACE VIEW `view_event` AS \
+            SELECT \
+                `tbl_event`.`id` AS `id`, \
+                `tbl_event`.`name` AS `name`, \
+                `tbl_event`.`value` AS `value`, \
+                `tbl_event`.`timestamp` AS `timestamp`, \
+                `tbl_meta`.`description` AS `description`, \
+                `tbl_meta`.`unit` AS `unit` \
+            FROM \
+                `tbl_event` \
+                LEFT JOIN `tbl_meta` ON `tbl_event`.`name` = `tbl_meta`.`name` \
+            ;"
+        ]
+
+        try:
+            if self.database_connect() == -1:
+                return -1
+
+            for sql in sqls:
+                self.mycursor.execute(sql)
+                self.mydb.commit()
+
+            if self.database_close() == -1:
+                return -1
+        except Exception as e:
+            self._log.error("Database initialize error: " + str(e))
             return -1
 
         return 0
