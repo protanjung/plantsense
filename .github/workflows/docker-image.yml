@@ -3,8 +3,6 @@ name: Docker Image CI
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   docker:
@@ -31,11 +29,11 @@ jobs:
         context: .
         platforms: linux/amd64,linux/arm64
         push: true
-        tags: ${{ secrets.DOCKER_USERNAME }}/plantsense:latest
+        tags: protanjung/plantsense:latest
 
     - name: Docker Hub Description
       uses: peter-evans/dockerhub-description@v3
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
-        repository: ${{ secrets.DOCKERHUB_USERNAME }}/plantsense
+        repository: protanjung/plantsense
