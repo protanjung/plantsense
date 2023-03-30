@@ -1,0 +1,79 @@
+services:
+  mysql:
+    image: mysql:5
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "opc"
+      MYSQL_DATABASE: "opc"
+      MYSQL_USER: "opc"
+      MYSQL_PASSWORD: "opc"
+    volumes:
+      - ${HOME}/docker-data/mysql/var/lib/mysql:/var/lib/mysql
+    ports:
+      - 3306:3306
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5
+    container_name: phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: opc
+      PMA_PASSWORD: opc
+    ports:
+      - 8080:80
+
+  prometheus:
+    image: prom/prometheus:v2.43.0
+    container_name: prometheus
+    restart: always
+    volumes:
+      - ${HOME}/docker-data/prometheus/etc/prometheus:/etc/prometheus
+      - ${HOME}/docker-data/prometheus/prometheus:/prometheus
+    ports:
+      - 9090:9090
+
+  grafana:
+    image: grafana/grafana:9.4.3
+    container_name: grafana
+    restart: always
+    volumes:
+      - grafana-var-lib-grafana:/var/lib/grafana
+      - grafana-etc-grafana:/etc/grafana
+      - grafana-var-log-grafana:/var/log/grafana
+    ports:
+      - 3000:3000
+
+  portainer:
+    image: portainer/portainer-ce:2.9.3
+    container_name: portainer
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer-data:/data
+    ports:
+      - 8000:8000
+      - 9443:9443
+
+  plantsense:
+    image: protanjung/plantsense:latest
+    container_name: plantsense
+    restart: always
+    volumes:
+      - ${HOME}/docker-data/plantsense/root/plantsense-data:/root/plantsense-data
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --cleanup --schedule "0 * * * *"
+
+volumes:
+  grafana-var-lib-grafana:
+  grafana-etc-grafana:
+  grafana-var-log-grafana:
+  portainer-data:
