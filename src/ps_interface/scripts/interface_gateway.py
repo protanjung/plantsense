@@ -22,6 +22,9 @@ class interface_gateway:
         # =====Help
         self._log = help_log()
 
+        self.last_timestamp = None
+        self.is_initialized = False
+
         if (self.gateway_init() == -1):
             rospy.signal_shutdown("")
 
@@ -29,8 +32,9 @@ class interface_gateway:
     # ==========================================================================
 
     def cllbck_tim_1hz(self, event):
-        if (self.gateway_routine() == -1):
-            rospy.signal_shutdown("")
+        if self.is_initialized is True:
+            if (self.gateway_routine() == -1):
+                rospy.signal_shutdown("")
 
     def cllbck_tim_50hz(self, event):
         pass
@@ -46,32 +50,41 @@ class interface_gateway:
         self._log.info("Gateway Register Group: " + self.gw_register_group)
         self._log.info("Gateway Register Period: " + self.gw_register_period)
 
+        # Mark initialization
+        self.is_initialized = True
+
         return 0
 
     def gateway_routine(self):
-        # Sending a GET request to the URL stored in the parameter
-        # `gw_data`. Received data is stored in the variable `response`.
-        response = requests.request("GET", self.gw_data)
-
-        # Checking if the response is 200, if it is,
-        # it is loading the data into a dictionary.
         response_dict = {}
-        if (response.status_code == 200):
-            response_dict = json.loads(response.text)
-        else:
-            self._log.error("Gateway Data: " + str(response.status_code) + " " + response.text)
+
+        # This code block is making a GET request to the URL specified in the `gw_data` parameter using the
+        # `requests` library in Python. If the response status code is 200 (OK), it loads the response text as
+        # a JSON object into the `response_dict` variable. If there is an exception during the request, it
+        # logs an error message using the `help_log` library and returns -1 to indicate an error.
+        try:
+            response = requests.request("GET", self.gw_data)
+            if (response.status_code == 200):
+                response_dict = json.loads(response.text)
+        except BaseException as e:
+            self._log.error("gateway_routine(): " + str(e))
+            return -1
+
+        if self.last_timestamp is None:
+            self.last_timestamp = list(response_dict["opc_data_all_server"].values())[0]["timestamp_local"]
             return 0
 
-        # Creating a message of type `opcs` and filling it
-        # with the data from the dictionary then publishing it.
-        msg_opcs = opcs()
-        for key, value in response_dict["opc_data_all_server"].items():
-            msg_opc = opc()
-            msg_opc.name = value["name"]
-            msg_opc.value = value["value"]
-            msg_opc.timestamp = value["timestamp"]
-            msg_opcs.opcs.append(msg_opc)
-        self.pub_opcs.publish(msg_opcs)
+        if self.last_timestamp != list(response_dict["opc_data_all_server"].values())[0]["timestamp_local"]:
+            self.last_timestamp = list(response_dict["opc_data_all_server"].values())[0]["timestamp_local"]
+
+            msg_opcs = opcs()
+            for key, value in response_dict["opc_data_all_server"].items():
+                msg_opc = opc()
+                msg_opc.name = value["name"]
+                msg_opc.value = value["value"]
+                msg_opc.timestamp = value["timestamp"]
+                msg_opcs.opcs.append(msg_opc)
+            self.pub_opcs.publish(msg_opcs)
 
         return 0
 

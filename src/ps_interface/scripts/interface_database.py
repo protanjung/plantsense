@@ -23,6 +23,7 @@ class interface_database:
 
         self.mydb = None
         self.mycursor = None
+        self.is_initialized = False
 
         if (self.database_init() == -1):
             rospy.signal_shutdown("")
@@ -31,8 +32,9 @@ class interface_database:
     # ==========================================================================
 
     def cllbck_tim_1hz(self, event):
-        if (self.database_routine() == -1):
-            rospy.signal_shutdown("")
+        if self.is_initialized is True:
+            if (self.database_routine() == -1):
+                rospy.signal_shutdown("")
 
     def cllbck_tim_50hz(self, event):
         pass
@@ -43,6 +45,7 @@ class interface_database:
     def cllbck_sub_opcs(self, msg):
         for opc in msg.opcs:
             self.database_insert_data(opc.name, opc.value, opc.timestamp)
+        self.database_delete_data()
 
     # --------------------------------------------------------------------------
     # ==========================================================================
@@ -58,6 +61,9 @@ class interface_database:
 
         # Initializing the database.
         self.database_initialize()
+
+        # Mark initialization
+        self.is_initialized = True
 
         return 0
 
@@ -94,20 +100,50 @@ class interface_database:
         return 0
 
     def database_insert_data(self, opc_name, opc_value, opc_timestamp):
-        sql = "INSERT INTO {}.tbl_data (name,value,`timestamp`) VALUES (%s,%s,%s)".format(self.db_database)
+        sqls = ["INSERT INTO {}.tbl_data (name,value,`timestamp`) VALUES (%s,%s,%s)".format(self.db_database),
+                "INSERT INTO {}.tbl_data_last60sec (name,value,`timestamp`) VALUES (%s,%s,%s)".format(self.db_database),
+                "INSERT INTO {}.tbl_data_last60min (name,value,`timestamp`) VALUES (%s,%s,%s)".format(self.db_database),
+                "REPLACE INTO {}.tbl_data_last (name,value,`timestamp`) VALUES (%s,%s,%s)".format(self.db_database)]
+        params = [(opc_name, opc_value, opc_timestamp),
+                  (opc_name, opc_value, opc_timestamp),
+                  (opc_name, opc_value, opc_timestamp),
+                  (opc_name, opc_value, opc_timestamp)]
 
-        try:
-            if self.database_connect() == -1:
+        for sql, param in zip(sqls, params):
+            try:
+                if self.database_connect() == -1:
+                    return -1
+
+                self.mycursor.execute(sql, param)
+                self.mydb.commit()
+
+                if self.database_close() == -1:
+                    return -1
+            except Exception as e:
+                self._log.error("Database insert data error: " + str(e))
                 return -1
 
-            self.mycursor.execute(sql, (opc_name, opc_value, opc_timestamp))
-            self.mydb.commit()
+        return 0
 
-            if self.database_close() == -1:
+    def database_delete_data(self):
+        sqls = ["DELETE FROM {}.tbl_data_last60sec WHERE `timestamp_local` < DATE_SUB(NOW(), INTERVAL 60 SECOND)".format(self.db_database),
+                "DELETE FROM {}.tbl_data_last60min WHERE `timestamp_local` < DATE_SUB(NOW(), INTERVAL 60 MINUTE)".format(self.db_database)]
+        params = [(),
+                  ()]
+
+        for sql, param in zip(sqls, params):
+            try:
+                if self.database_connect() == -1:
+                    return -1
+
+                self.mycursor.execute(sql, param)
+                self.mydb.commit()
+
+                if self.database_close() == -1:
+                    return -1
+            except Exception as e:
+                self._log.error("Database delete data error: " + str(e))
                 return -1
-        except Exception as e:
-            self._log.error("Database insert data error: " + str(e))
-            return -1
 
         return 0
 
@@ -118,13 +154,38 @@ class interface_database:
                 `name` varchar(255) NOT NULL, \
                 `value` float NOT NULL, \
                 `timestamp` datetime NOT NULL, \
+                `timestamp_local` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, \
                 PRIMARY KEY (`id`) \
+            ) ;",
+            "CREATE TABLE IF NOT EXISTS `tbl_data_last60sec` ( \
+                `id` int NOT NULL AUTO_INCREMENT, \
+                `name` varchar(255) NOT NULL, \
+                `value` float NOT NULL, \
+                `timestamp` datetime NOT NULL, \
+                `timestamp_local` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, \
+                PRIMARY KEY (`id`) \
+            ) ;",
+            "CREATE TABLE IF NOT EXISTS `tbl_data_last60min` ( \
+                `id` int NOT NULL AUTO_INCREMENT, \
+                `name` varchar(255) NOT NULL, \
+                `value` float NOT NULL, \
+                `timestamp` datetime NOT NULL, \
+                `timestamp_local` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, \
+                PRIMARY KEY (`id`) \
+            ) ;",
+            "CREATE TABLE IF NOT EXISTS `tbl_data_last` ( \
+                `name` varchar(255) NOT NULL, \
+                `value` float NOT NULL, \
+                `timestamp` datetime NOT NULL, \
+                `timestamp_local` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, \
+                PRIMARY KEY (`name`) \
             ) ;",
             "CREATE TABLE IF NOT EXISTS `tbl_event` ( \
                 `id` int NOT NULL AUTO_INCREMENT, \
                 `name` varchar(255) NOT NULL, \
                 `value` float NOT NULL, \
                 `timestamp` datetime NOT NULL, \
+                `timestamp_local` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, \
                 PRIMARY KEY (`id`) \
             ) ;",
             "CREATE TABLE IF NOT EXISTS `tbl_meta` ( \
@@ -140,6 +201,7 @@ class interface_database:
                 `tbl_data`.`name` AS `name`, \
                 `tbl_data`.`value` AS `value`, \
                 `tbl_data`.`timestamp` AS `timestamp`, \
+                `tbl_data`.`timestamp_local` AS `timestamp_local`, \
                 `tbl_meta`.`description` AS `description`, \
                 `tbl_meta`.`unit` AS `unit` \
             FROM \
@@ -152,6 +214,7 @@ class interface_database:
                 `tbl_event`.`name` AS `name`, \
                 `tbl_event`.`value` AS `value`, \
                 `tbl_event`.`timestamp` AS `timestamp`, \
+                `tbl_event`.`timestamp_local` AS `timestamp_local`, \
                 `tbl_meta`.`description` AS `description`, \
                 `tbl_meta`.`unit` AS `unit` \
             FROM \
