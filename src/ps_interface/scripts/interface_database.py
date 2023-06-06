@@ -195,6 +195,16 @@ class interface_database:
                 `unit` varchar(255) NOT NULL, \
                 PRIMARY KEY (`id`) \
             ) ;",
+            "CREATE TABLE IF NOT EXISTS `tbl_fuel` ( \
+                `id` int NOT NULL AUTO_INCREMENT, \
+                `name` varchar(255) NOT NULL, \
+                `min_volume` float NOT NULL DEFAULT 0, \
+                `max_volume` float NOT NULL DEFAULT 0, \
+                `price` float NOT NULL DEFAULT 0, \
+                `volume` float NOT NULL DEFAULT 0, \
+                `total` float GENERATED ALWAYS AS (price * volume) VIRTUAL, \
+                PRIMARY KEY (`id`) \
+            ) ;",
             "CREATE OR REPLACE VIEW `view_data` AS \
             SELECT \
                 `tbl_data`.`id` AS `id`, \
