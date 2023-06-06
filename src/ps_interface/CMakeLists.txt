@@ -50,6 +50,8 @@ add_message_files(
   FILES
   opc.msg
   opcs.msg
+  fuel_input.msg
+  fuels_input.msg
 )
 
 ## Generate services in the 'srv' folder
