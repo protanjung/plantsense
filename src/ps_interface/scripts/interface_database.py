@@ -2,7 +2,8 @@
 
 import rospy
 from ps_ros_lib.help_log import help_log
-from ps_interface.msg import opc, opcs
+from ps_interface.msg import opc, opcs, fuel_input, fuels_input
+from threading import Lock
 import mysql.connector
 
 class interface_database:
@@ -14,13 +15,17 @@ class interface_database:
         self.db_user = rospy.get_param('db/user', 'ps_user')
         self.db_password = rospy.get_param('db/password', 'ps_password')
         # =====Timer
+        self.tim_01hz = rospy.Timer(rospy.Duration(10), self.cllbck_tim_01hz)
         self.tim_1hz = rospy.Timer(rospy.Duration(1), self.cllbck_tim_1hz)
         self.tim_50hz = rospy.Timer(rospy.Duration(0.02), self.cllbck_tim_50hz)
         # =====Subscriber
-        self.sub_opcs = rospy.Subscriber('opcs', opcs, self.cllbck_sub_opcs)
+        self.sub_opcs = rospy.Subscriber('opcs', opcs, self.cllbck_sub_opcs, queue_size=1)
+        # =====Publisher
+        self.pub_fuels_input = rospy.Publisher('fuels_input', fuels_input, queue_size=0)
         # =====Help
         self._log = help_log()
 
+        self.lock = Lock()
         self.mydb = None
         self.mycursor = None
         self.is_initialized = False
@@ -30,6 +35,23 @@ class interface_database:
 
     # --------------------------------------------------------------------------
     # ==========================================================================
+
+    def cllbck_tim_01hz(self, event):
+        if self.is_initialized is True:
+            self.lock.acquire()
+            result = self.database_select_fuel()
+            self.lock.release()
+
+            if len(result) > 0:
+                msg_fuels_input = fuels_input()
+                for row in result:
+                    msg_fuel_input = fuel_input()
+                    msg_fuel_input.name = row[1]
+                    msg_fuel_input.min_volume = row[2]
+                    msg_fuel_input.max_volume = row[3]
+                    msg_fuel_input.price = row[4]
+                    msg_fuels_input.fuels_input.append(msg_fuel_input)
+                self.pub_fuels_input.publish(msg_fuels_input)
 
     def cllbck_tim_1hz(self, event):
         if self.is_initialized is True:
@@ -44,8 +66,12 @@ class interface_database:
 
     def cllbck_sub_opcs(self, msg):
         for opc in msg.opcs:
+            self.lock.acquire()
             self.database_insert_data(opc.name, opc.value, opc.timestamp)
+            self.lock.release()
+        self.lock.acquire()
         self.database_delete_data()
+        self.lock.release()
 
     # --------------------------------------------------------------------------
     # ==========================================================================
@@ -96,54 +122,6 @@ class interface_database:
         except Exception as e:
             self._log.error("Database close error: " + str(e))
             return -1
-
-        return 0
-
-    def database_insert_data(self, opc_name, opc_value, opc_timestamp):
-        sqls = ["INSERT INTO {}.tbl_data (name,value,`timestamp`) VALUES (%s,%s,%s)".format(self.db_database),
-                "INSERT INTO {}.tbl_data_last60sec (name,value,`timestamp`) VALUES (%s,%s,%s)".format(self.db_database),
-                "INSERT INTO {}.tbl_data_last60min (name,value,`timestamp`) VALUES (%s,%s,%s)".format(self.db_database),
-                "REPLACE INTO {}.tbl_data_last (name,value,`timestamp`) VALUES (%s,%s,%s)".format(self.db_database)]
-        params = [(opc_name, opc_value, opc_timestamp),
-                  (opc_name, opc_value, opc_timestamp),
-                  (opc_name, opc_value, opc_timestamp),
-                  (opc_name, opc_value, opc_timestamp)]
-
-        for sql, param in zip(sqls, params):
-            try:
-                if self.database_connect() == -1:
-                    return -1
-
-                self.mycursor.execute(sql, param)
-                self.mydb.commit()
-
-                if self.database_close() == -1:
-                    return -1
-            except Exception as e:
-                self._log.error("Database insert data error: " + str(e))
-                return -1
-
-        return 0
-
-    def database_delete_data(self):
-        sqls = ["DELETE FROM {}.tbl_data_last60sec WHERE `timestamp_local` < DATE_SUB(NOW(), INTERVAL 60 SECOND)".format(self.db_database),
-                "DELETE FROM {}.tbl_data_last60min WHERE `timestamp_local` < DATE_SUB(NOW(), INTERVAL 60 MINUTE)".format(self.db_database)]
-        params = [(),
-                  ()]
-
-        for sql, param in zip(sqls, params):
-            try:
-                if self.database_connect() == -1:
-                    return -1
-
-                self.mycursor.execute(sql, param)
-                self.mydb.commit()
-
-                if self.database_close() == -1:
-                    return -1
-            except Exception as e:
-                self._log.error("Database delete data error: " + str(e))
-                return -1
 
         return 0
 
@@ -248,6 +226,75 @@ class interface_database:
             return -1
 
         return 0
+
+    # --------------------------------------------------------------------------
+    # ==========================================================================
+
+    def database_insert_data(self, opc_name, opc_value, opc_timestamp):
+        sqls = ["INSERT INTO {}.tbl_data (name,value,`timestamp`) VALUES (%s,%s,%s)".format(self.db_database),
+                "INSERT INTO {}.tbl_data_last60sec (name,value,`timestamp`) VALUES (%s,%s,%s)".format(self.db_database),
+                "INSERT INTO {}.tbl_data_last60min (name,value,`timestamp`) VALUES (%s,%s,%s)".format(self.db_database),
+                "REPLACE INTO {}.tbl_data_last (name,value,`timestamp`) VALUES (%s,%s,%s)".format(self.db_database)]
+        params = [(opc_name, opc_value, opc_timestamp),
+                  (opc_name, opc_value, opc_timestamp),
+                  (opc_name, opc_value, opc_timestamp),
+                  (opc_name, opc_value, opc_timestamp)]
+
+        for sql, param in zip(sqls, params):
+            try:
+                if self.database_connect() == -1:
+                    return -1
+
+                self.mycursor.execute(sql, param)
+                self.mydb.commit()
+
+                if self.database_close() == -1:
+                    return -1
+            except Exception as e:
+                self._log.error("Database insert data error: " + str(e))
+                return -1
+
+        return 0
+
+    def database_delete_data(self):
+        sqls = ["DELETE FROM {}.tbl_data_last60sec WHERE `timestamp_local` < DATE_SUB(NOW(), INTERVAL 60 SECOND)".format(self.db_database),
+                "DELETE FROM {}.tbl_data_last60min WHERE `timestamp_local` < DATE_SUB(NOW(), INTERVAL 60 MINUTE)".format(self.db_database)]
+        params = [(),
+                  ()]
+
+        for sql, param in zip(sqls, params):
+            try:
+                if self.database_connect() == -1:
+                    return -1
+
+                self.mycursor.execute(sql, param)
+                self.mydb.commit()
+
+                if self.database_close() == -1:
+                    return -1
+            except Exception as e:
+                self._log.error("Database delete data error: " + str(e))
+                return -1
+
+        return 0
+
+    def database_select_fuel(self):
+        sql = "SELECT * FROM {}.tbl_fuel".format(self.db_database)
+
+        try:
+            if self.database_connect() == -1:
+                return -1
+
+            self.mycursor.execute(sql)
+            result = self.mycursor.fetchall()
+
+            if self.database_close() == -1:
+                return -1
+        except Exception as e:
+            self._log.error("Database select fuel error: " + str(e))
+            return -1
+
+        return result
 
 
 if __name__ == '__main__':
