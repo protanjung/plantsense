@@ -37,37 +37,41 @@ class interface_database:
     # ==========================================================================
 
     def cllbck_tim_01hz(self, event):
-        if self.is_initialized is True:
-            self.mylock.acquire()
-            result = self.database_select_fuel()
-            self.mylock.release()
+        if not self.is_initialized:
+            return
 
-            if result == -1:
-                rospy.signal_shutdown("")
+        self.mylock.acquire()
+        result = self.database_select_fuel()
+        self.mylock.release()
 
-            if len(result) > 0:
-                msg_fuels_input = fuels_input()
-                for row in result:
-                    msg_fuel_input = fuel_input()
-                    msg_fuel_input.name = row[1]
-                    msg_fuel_input.min_volume = row[2]
-                    msg_fuel_input.max_volume = row[3]
-                    msg_fuel_input.price = row[4]
-                    msg_fuels_input.fuels_input.append(msg_fuel_input)
-                self.pub_fuels_input.publish(msg_fuels_input)
+        if result == -1:
+            rospy.signal_shutdown("")
+
+        if len(result) > 0:
+            msg_fuels_input = fuels_input()
+            for row in result:
+                msg_fuel_input = fuel_input()
+                msg_fuel_input.name = row[1]
+                msg_fuel_input.min_volume = row[2]
+                msg_fuel_input.max_volume = row[3]
+                msg_fuel_input.price = row[4]
+                msg_fuels_input.fuels_input.append(msg_fuel_input)
+            self.pub_fuels_input.publish(msg_fuels_input)
 
     def cllbck_tim_1hz(self, event):
-        if self.is_initialized is True:
-            self.mylock.acquire()
-            result = self.database_select_param()
-            self.mylock.release()
+        if not self.is_initialized:
+            return
 
-            if result == -1:
-                rospy.signal_shutdown("")
+        self.mylock.acquire()
+        result = self.database_select_param()
+        self.mylock.release()
 
-            if len(result) > 0:
-                for row in result:
-                    rospy.set_param(row[1], row[2])
+        if result == -1:
+            rospy.signal_shutdown("")
+
+        if len(result) > 0:
+            for row in result:
+                rospy.set_param(row[1], row[2])
 
     def cllbck_tim_50hz(self, event):
         pass
@@ -76,6 +80,9 @@ class interface_database:
     # ==========================================================================
 
     def cllbck_sub_opcs(self, msg):
+        if not self.is_initialized:
+            return
+
         for opc in msg.opcs:
             self.mylock.acquire()
             self.database_insert_data(opc.name, opc.value, opc.timestamp)
@@ -102,9 +109,6 @@ class interface_database:
         # Mark initialization
         self.is_initialized = True
 
-        return 0
-
-    def database_routine(self):
         return 0
 
     # --------------------------------------------------------------------------
