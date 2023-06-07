@@ -179,8 +179,6 @@ class interface_database:
                 `min_volume` float NOT NULL DEFAULT 0, \
                 `max_volume` float NOT NULL DEFAULT 0, \
                 `price` float NOT NULL DEFAULT 0, \
-                `volume` float NOT NULL DEFAULT 0, \
-                `total` float GENERATED ALWAYS AS (price * volume) VIRTUAL, \
                 PRIMARY KEY (`id`) \
             ) ;",
             "CREATE OR REPLACE VIEW `view_data` AS \
