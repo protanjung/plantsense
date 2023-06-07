@@ -22,4 +22,5 @@
     <node pkg="ps_interface" type="interface_database.py" name="interface_database" output="screen" respawn="true" />
 
     <node pkg="ps_routine" type="routine" name="routine" output="screen" respawn="true" />
+    <node pkg="ps_routine" type="optimizer.py" name="optimizer" output="screen" respawn="true" />
 </launch>

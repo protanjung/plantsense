@@ -10,7 +10,8 @@ RUN wget https://bootstrap.pypa.io/get-pip.py \
 
 RUN pip install \
     requests \
-    mysql-connector-python
+    mysql-connector-python \
+    pulp
 
 RUN mkdir -p /root/plantsense
 COPY ./src /root/plantsense/src
