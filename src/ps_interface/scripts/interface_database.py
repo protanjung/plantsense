@@ -2,7 +2,7 @@
 
 import rospy
 from ps_ros_lib.help_log import help_log
-from ps_interface.msg import opc, opcs, fuel_input, fuels_input
+from ps_interface.msg import db_data, opc, opcs, fuel_input, fuels_input
 from threading import Lock
 import mysql.connector
 
@@ -21,6 +21,7 @@ class interface_database:
         # =====Subscriber
         self.sub_opcs = rospy.Subscriber('opcs', opcs, self.cllbck_sub_opcs, queue_size=1)
         # =====Publisher
+        self.pub_db_data = rospy.Publisher('db_data', db_data, queue_size=0)
         self.pub_fuels_input = rospy.Publisher('fuels_input', fuels_input, queue_size=0)
         # =====Help
         self._log = help_log()
@@ -90,6 +91,21 @@ class interface_database:
         self.mylock.acquire()
         self.database_delete_data()
         self.mylock.release()
+
+        # ==============================
+
+        megawatt_tags = rospy.get_param('megawatt_tags', '').split(';')
+
+        megawatt = 0
+        for opc in msg.opcs:
+            if opc.name in megawatt_tags:
+                megawatt += opc.value
+
+        # ==============================
+
+        msg_db_data = db_data()
+        msg_db_data.megawatt = megawatt
+        self.pub_db_data.publish(msg_db_data)
 
     # --------------------------------------------------------------------------
     # ==========================================================================
