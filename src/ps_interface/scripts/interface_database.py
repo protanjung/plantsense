@@ -25,7 +25,7 @@ class interface_database:
         # =====Help
         self._log = help_log()
 
-        self.lock = Lock()
+        self.mylock = Lock()
         self.mydb = None
         self.mycursor = None
         self.is_initialized = False
@@ -38,9 +38,12 @@ class interface_database:
 
     def cllbck_tim_01hz(self, event):
         if self.is_initialized is True:
-            self.lock.acquire()
+            self.mylock.acquire()
             result = self.database_select_fuel()
-            self.lock.release()
+            self.mylock.release()
+
+            if result == -1:
+                rospy.signal_shutdown("")
 
             if len(result) > 0:
                 msg_fuels_input = fuels_input()
@@ -55,8 +58,16 @@ class interface_database:
 
     def cllbck_tim_1hz(self, event):
         if self.is_initialized is True:
-            if (self.database_routine() == -1):
+            self.mylock.acquire()
+            result = self.database_select_param()
+            self.mylock.release()
+
+            if result == -1:
                 rospy.signal_shutdown("")
+
+            if len(result) > 0:
+                for row in result:
+                    rospy.set_param(row[1], row[2])
 
     def cllbck_tim_50hz(self, event):
         pass
@@ -66,12 +77,12 @@ class interface_database:
 
     def cllbck_sub_opcs(self, msg):
         for opc in msg.opcs:
-            self.lock.acquire()
+            self.mylock.acquire()
             self.database_insert_data(opc.name, opc.value, opc.timestamp)
-            self.lock.release()
-        self.lock.acquire()
+            self.mylock.release()
+        self.mylock.acquire()
         self.database_delete_data()
-        self.lock.release()
+        self.mylock.release()
 
     # --------------------------------------------------------------------------
     # ==========================================================================
@@ -127,6 +138,12 @@ class interface_database:
 
     def database_initialize(self):
         sqls = [
+            "CREATE TABLE IF NOT EXISTS `tbl_param` ( \
+                `id` int NOT NULL AUTO_INCREMENT, \
+                `name` varchar(255) NOT NULL, \
+                `value` varchar(255) NOT NULL, \
+                PRIMARY KEY (`id`) \
+            ) ;",
             "CREATE TABLE IF NOT EXISTS `tbl_data` ( \
                 `id` int NOT NULL AUTO_INCREMENT, \
                 `name` varchar(255) NOT NULL, \
@@ -179,6 +196,22 @@ class interface_database:
                 `min_volume` float NOT NULL DEFAULT 0, \
                 `max_volume` float NOT NULL DEFAULT 0, \
                 `price` float NOT NULL DEFAULT 0, \
+                PRIMARY KEY (`id`) \
+            ) ;",
+            "CREATE TABLE IF NOT EXISTS `tbl_fuel_perminute` ( \
+                `id` int NOT NULL AUTO_INCREMENT, \
+                `volume` varchar(255) NOT NULL, \
+                `subtotal` float NOT NULL DEFAULT 0, \
+                `total` float NOT NULL DEFAULT 0, \
+                `power` float NOT NULL DEFAULT 0, \
+                PRIMARY KEY (`id`) \
+            ) ;",
+            "CREATE TABLE IF NOT EXISTS `tbl_fuel_perday` ( \
+                `id` int NOT NULL AUTO_INCREMENT, \
+                `volume` varchar(255) NOT NULL, \
+                `subtotal` float NOT NULL DEFAULT 0, \
+                `total` float NOT NULL DEFAULT 0, \
+                `power` float NOT NULL DEFAULT 0, \
                 PRIMARY KEY (`id`) \
             ) ;",
             "CREATE OR REPLACE VIEW `view_data` AS \
@@ -290,6 +323,24 @@ class interface_database:
                 return -1
         except Exception as e:
             self._log.error("Database select fuel error: " + str(e))
+            return -1
+
+        return result
+
+    def database_select_param(self):
+        sql = "SELECT * FROM {}.tbl_param".format(self.db_database)
+
+        try:
+            if self.database_connect() == -1:
+                return -1
+
+            self.mycursor.execute(sql)
+            result = self.mycursor.fetchall()
+
+            if self.database_close() == -1:
+                return -1
+        except Exception as e:
+            self._log.error("Database select param error: " + str(e))
             return -1
 
         return result
