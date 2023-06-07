@@ -3,6 +3,7 @@
 import rospy
 from ps_ros_lib.help_log import help_log
 from ps_interface.msg import db_data, opc, opcs, fuel_input, fuels_input
+from std_msgs.msg import String
 from threading import Lock
 import mysql.connector
 
@@ -20,6 +21,7 @@ class interface_database:
         self.tim_50hz = rospy.Timer(rospy.Duration(0.02), self.cllbck_tim_50hz)
         # =====Subscriber
         self.sub_opcs = rospy.Subscriber('opcs', opcs, self.cllbck_sub_opcs, queue_size=1)
+        self.sub_fuel_perminute = rospy.Subscriber('fuel_perminute', String, self.cllbck_sub_fuel_perminute, queue_size=1)
         # =====Publisher
         self.pub_db_data = rospy.Publisher('db_data', db_data, queue_size=0)
         self.pub_fuels_input = rospy.Publisher('fuels_input', fuels_input, queue_size=0)
@@ -84,6 +86,8 @@ class interface_database:
         if not self.is_initialized:
             return
 
+        # ==============================
+
         for opc in msg.opcs:
             self.mylock.acquire()
             self.database_insert_data(opc.name, opc.value, opc.timestamp)
@@ -106,6 +110,16 @@ class interface_database:
         msg_db_data = db_data()
         msg_db_data.megawatt = megawatt
         self.pub_db_data.publish(msg_db_data)
+
+    def cllbck_sub_fuel_perminute(self, msg):
+        if not self.is_initialized:
+            return
+
+        # ==============================
+
+        self.mylock.acquire()
+        self.database_insert_fuel_perminute(msg.data)
+        self.mylock.release()
 
     # --------------------------------------------------------------------------
     # ==========================================================================
@@ -220,18 +234,14 @@ class interface_database:
             ) ;",
             "CREATE TABLE IF NOT EXISTS `tbl_fuel_perminute` ( \
                 `id` int NOT NULL AUTO_INCREMENT, \
-                `volume` varchar(255) NOT NULL, \
-                `subtotal` float NOT NULL DEFAULT 0, \
-                `total` float NOT NULL DEFAULT 0, \
-                `power` float NOT NULL DEFAULT 0, \
+                `result` varchar(1024) NOT NULL, \
+                `timestamp_local` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, \
                 PRIMARY KEY (`id`) \
             ) ;",
             "CREATE TABLE IF NOT EXISTS `tbl_fuel_perday` ( \
                 `id` int NOT NULL AUTO_INCREMENT, \
-                `volume` varchar(255) NOT NULL, \
-                `subtotal` float NOT NULL DEFAULT 0, \
-                `total` float NOT NULL DEFAULT 0, \
-                `power` float NOT NULL DEFAULT 0, \
+                `result` varchar(1024) NOT NULL, \
+                `timestamp_local` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, \
                 PRIMARY KEY (`id`) \
             ) ;",
             "CREATE OR REPLACE VIEW `view_data` AS \
@@ -304,6 +314,44 @@ class interface_database:
             except Exception as e:
                 self._log.error("Database insert data error: " + str(e))
                 return -1
+
+        return 0
+
+    def database_insert_fuel_perminute(self, result):
+        sql = "INSERT INTO {}.tbl_fuel_perminute (result) VALUES (%s)".format(self.db_database)
+        param = (result,)
+
+        try:
+            if self.database_connect() == -1:
+                return -1
+
+            self.mycursor.execute(sql, param)
+            self.mydb.commit()
+
+            if self.database_close() == -1:
+                return -1
+        except Exception as e:
+            self._log.error("Database insert fuel perminute error: " + str(e))
+            return -1
+
+        return 0
+
+    def database_insert_fuel_perday(self, result):
+        sql = "INSERT INTO {}.tbl_fuel_perday (result) VALUES (%s)".format(self.db_database)
+        param = (result,)
+
+        try:
+            if self.database_connect() == -1:
+                return -1
+
+            self.mycursor.execute(sql, param)
+            self.mydb.commit()
+
+            if self.database_close() == -1:
+                return -1
+        except Exception as e:
+            self._log.error("Database insert fuel perday error: " + str(e))
+            return -1
 
         return 0
 
