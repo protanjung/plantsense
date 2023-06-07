@@ -83,6 +83,9 @@ class optimizer:
         # `result_json` dictionary using the `prob.variables()` function from the `pulp` library.
         result_json = {}
         result_json['status'] = LpStatus[status]
+        result_json['megawatt'] = self.db_data.megawatt
+        result_json['fuel_sfc'] = self.fuel_sfc
+        result_json['total_fuel_needed'] = fuel_volume_needed
         result_json['total_fuel_cost'] = prob.objective.value()
         result_json['fuels'] = []
         for v in prob.variables():
