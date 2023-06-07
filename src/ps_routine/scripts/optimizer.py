@@ -2,16 +2,25 @@
 
 import rospy
 from ps_ros_lib.help_log import help_log
-from ps_interface.msg import fuel_input, fuels_input
+from ps_interface.msg import db_data, fuel_input, fuels_input
 from pulp import LpMinimize, LpProblem, LpStatus, lpSum, LpVariable
+from pulp.apis import PULP_CBC_CMD
 
 class optimizer:
     def __init__(self):
+        # =====Timer
+        self.tim_017hz = rospy.Timer(rospy.Duration(1), self.cllbck_tim_017hz)
+        self.tim_1hz = rospy.Timer(rospy.Duration(1), self.cllbck_tim_1hz)
+        self.tim_50hz = rospy.Timer(rospy.Duration(0.02), self.cllbck_tim_50hz)
         # =====Subscriber
+        self.sub_db_data = rospy.Subscriber('db_data', db_data, self.cllbck_sub_db_data, queue_size=1)
         self.sub_fuels_input = rospy.Subscriber('fuels_input', fuels_input, self.cllbck_sub_fuels_input, queue_size=1)
         # =====Help
         self.help_log = help_log()
 
+        self.db_data = db_data()
+        self.fuels_input = fuels_input()
+        self.fuel_sfc = 0.0
         self.is_initialized = False
 
         if (self.optimizer_init() == -1):
@@ -20,32 +29,29 @@ class optimizer:
     # --------------------------------------------------------------------------
     # ==========================================================================
 
+    def cllbck_tim_017hz(self, event):
+        pass
+
+    def cllbck_tim_1hz(self, event):
+        pass
+
+    def cllbck_tim_50hz(self, event):
+        pass
+
+    # --------------------------------------------------------------------------
+    # ==========================================================================
+
+    def cllbck_sub_db_data(self, msg):
+        if not self.is_initialized:
+            return
+
+        self.db_data = msg
+
     def cllbck_sub_fuels_input(self, msg):
-        num_of_fuel = len(msg.fuels_input)
+        if not self.is_initialized:
+            return
 
-        # =====
-        fuel_needs = 131194
-        # =====
-
-        min_volumes = []
-        for i in range(num_of_fuel):
-            min_volumes.append(msg.fuels_input[i].min_volume)
-        max_volumes = []
-        for i in range(num_of_fuel):
-            max_volumes.append(msg.fuels_input[i].max_volume)
-        prices = []
-        for i in range(num_of_fuel):
-            prices.append(msg.fuels_input[i].price)
-        # -----
-        fuels = []
-        for i in range(num_of_fuel):
-            fuels.append(LpVariable(msg.fuels_input[i].name, min_volumes[i], max_volumes[i]))
-        # -----
-        prob = LpProblem('PlantSense Optimizer', LpMinimize)
-        prob += lpSum([prices[i] * fuels[i] for i in range(num_of_fuel)])
-        prob += (lpSum([fuels[i] for i in range(num_of_fuel)]) == fuel_needs, 'fuel_needs')
-        # -----
-        status = prob.solve()
+        self.fuels_input = msg
 
     # --------------------------------------------------------------------------
     # ==========================================================================
