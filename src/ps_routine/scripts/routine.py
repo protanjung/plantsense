@@ -14,7 +14,6 @@ import pandas as pd
 class Routine():
     def __init__(self):
         # =====Timer
-        self.tim_2hz = rospy.Timer(rospy.Duration(0.5), self.cllbck_tim_2hz)
         self.tim_1hz = rospy.Timer(rospy.Duration(1), self.cllbck_tim_1hz)
         # =====Subscriber
         self.sub_opcs = rospy.Subscriber("opcs", opcs, self.cllbck_sub_opcs, queue_size=1)
@@ -32,11 +31,20 @@ class Routine():
 
     # --------------------------------------------------------------------------
 
-    def cllbck_tim_2hz(self, event):
-        pass
-
     def cllbck_tim_1hz(self, event):
-        pass
+        for opc in self.opcs_pool.itertuples():
+            self.cli_db_insert("tbl_data",
+                               ["name", "value", "timestamp"],
+                               [opc.name, str(opc.value), opc.timestamp])
+            self.cli_db_insert("tbl_data_last60sec",
+                               ["name", "value", "timestamp"],
+                               [opc.name, str(opc.value), opc.timestamp])
+            self.cli_db_insert("tbl_data_last1800sec",
+                               ["name", "value", "timestamp"],
+                               [opc.name, str(opc.value), opc.timestamp])
+
+        self.cli_db_delete("tbl_data_last60sec", "timestamp_local < now() - interval '60 second'")
+        self.cli_db_delete("tbl_data_last1800sec", "timestamp_local < now() - interval '1800 second'")
 
     # --------------------------------------------------------------------------
 
