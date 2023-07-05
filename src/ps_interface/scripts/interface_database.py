@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import rospy
 from ps_interface.srv import db_insert, db_insertResponse
@@ -14,7 +14,7 @@ import pandas as pd
 class InterfaceDatabase():
     def __init__(self):
         # =====Parameter
-        self.db_host = rospy.get_param("db/host", "localhost")
+        self.db_host = rospy.get_param("db/host", "postgres")
         self.db_port = rospy.get_param("db/port", 5432)
         self.db_user = rospy.get_param("db/user", "opc")
         self.db_password = rospy.get_param("db/password", "opc")

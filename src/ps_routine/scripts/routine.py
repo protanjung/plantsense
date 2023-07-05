@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import rospy
 from ps_interface.msg import opc, opcs
@@ -138,7 +138,7 @@ class Routine():
     def routine_init(self):
         time.sleep(2)
 
-        start_http_server(9797)
+        start_http_server(5001)
 
         flask_thread = threading.Thread(target=self.thread_flask)
         flask_thread.daemon = True
