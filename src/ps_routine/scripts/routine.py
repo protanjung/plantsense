@@ -11,9 +11,10 @@ import time
 import json
 import threading
 import pandas as pd
-from flask import Flask, request, jsonify
 from pulp import LpMinimize, LpProblem, LpStatus, LpVariable, lpSum
 from pulp.apis import PULP_CBC_CMD
+from flask import Flask, request, jsonify
+from prometheus_client import start_http_server, Gauge
 
 
 class Routine():
@@ -35,6 +36,8 @@ class Routine():
 
         self.opcs_pool = pd.DataFrame(columns=["name", "value", "timestamp", "timestamp_local"])
         self.fuel_param = pd.DataFrame(columns=["name", "min_volume", "max_volume", "price"])
+
+        self.gauge_opc_data = Gauge("opc_data", "opc_data", ["name"])
 
         if self.routine_init() == -1:
             rospy.signal_shutdown("")
@@ -114,12 +117,14 @@ class Routine():
                                        ["name", "value", "timestamp"],
                                        [opc.name, str(opc.value), opc.timestamp],
                                        "name")
+                    self.gauge_opc_data.labels(opc.name).set(opc.value)
             else:
                 # If the opc is not in the pool, update the value and timestamp on the database
                 self.cli_db_upsert("tbl_data_last",
                                    ["name", "value", "timestamp"],
                                    [opc.name, str(opc.value), opc.timestamp],
                                    "name")
+                self.gauge_opc_data.labels(opc.name).set(opc.value)
 
             if len(index) != 0:
                 # If the opc is already in the pool, update the value and timestamp in the pool
@@ -132,6 +137,8 @@ class Routine():
 
     def routine_init(self):
         time.sleep(2)
+
+        start_http_server(9797)
 
         flask_thread = threading.Thread(target=self.thread_flask)
         flask_thread.daemon = True
