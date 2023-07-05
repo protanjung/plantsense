@@ -75,7 +75,7 @@ services:
     environment:
       TZ: "Asia/Jakarta"
     volumes:
-      - ${HOME}/plantsense-data:/root/plantsense-data
+      - ${HOME}/docker-data/plantsense/root/plantsense-data:/root/plantsense-data
     ports:
       - 5000:5000
       - 5001:5001
