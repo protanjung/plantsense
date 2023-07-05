@@ -6,6 +6,7 @@ from ps_interface.srv import db_select, db_selectResponse
 from ps_interface.srv import db_update, db_updateResponse
 from ps_interface.srv import db_upsert, db_upsertResponse
 from ps_interface.srv import db_delete, db_deleteResponse
+from threading import Lock
 import psycopg2
 import pandas as pd
 
@@ -27,6 +28,8 @@ class InterfaceDatabase():
         self.srv_db_update = rospy.Service("db_update", db_update, self.cllbck_srv_db_update)
         self.srv_db_upsert = rospy.Service("db_upsert", db_upsert, self.cllbck_srv_db_upsert)
         self.srv_db_delete = rospy.Service("db_delete", db_delete, self.cllbck_srv_db_delete)
+        # =====Mutex
+        self.mutex_db = Lock()
 
         if self.interface_database_init() == -1:
             rospy.signal_shutdown("")
@@ -120,8 +123,10 @@ class InterfaceDatabase():
             if i != len(column_names) - 1:
                 sql += ", "
         sql += ")"
+        self.mutex_db.acquire()
         self.myCursor.execute(sql)
         self.myDatabase.commit()
+        self.mutex_db.release()
 
     def db_insert(self, table_schema, table_name, columns, values):
         sql = "INSERT INTO " + table_schema + "." + table_name + " ("
@@ -135,8 +140,10 @@ class InterfaceDatabase():
             if i != len(values) - 1:
                 sql += ", "
         sql += ")"
+        self.mutex_db.acquire()
         self.myCursor.execute(sql)
         self.myDatabase.commit()
+        self.mutex_db.release()
 
     def db_select(self, table_schema, table_name, columns, where):
         sql = "SELECT "
@@ -147,9 +154,11 @@ class InterfaceDatabase():
         sql += " FROM " + table_schema + "." + table_name
         if where != "":
             sql += " WHERE " + where
+        self.mutex_db.acquire()
         self.myCursor.execute(sql)
         response = self.myCursor.fetchall()
         self.myDatabase.commit()
+        self.mutex_db.release()
         return pd.DataFrame(response, columns=columns).to_json(orient="split", indent=2)
 
     def db_update(self, table_schema, table_name, columns, values, where):
@@ -160,8 +169,10 @@ class InterfaceDatabase():
                 sql += ", "
         if where != "":
             sql += " WHERE " + where
+        self.mutex_db.acquire()
         self.myCursor.execute(sql)
         self.myDatabase.commit()
+        self.mutex_db.release()
 
     def db_upsert(self, table_schema, table_name, columns, values, primary_key):
         sql = "INSERT INTO " + table_schema + "." + table_name + " ("
@@ -179,15 +190,19 @@ class InterfaceDatabase():
             sql += columns[i] + " = '" + str(values[i]) + "'"
             if i != len(columns) - 1:
                 sql += ", "
+        self.mutex_db.acquire()
         self.myCursor.execute(sql)
         self.myDatabase.commit()
+        self.mutex_db.release()
 
     def db_delete(self, table_schema, table_name, where):
         sql = "DELETE FROM " + table_schema + "." + table_name
         if where != "":
             sql += " WHERE " + where
+        self.mutex_db.acquire()
         self.myCursor.execute(sql)
         self.myDatabase.commit()
+        self.mutex_db.release()
 
 
 if __name__ == "__main__":
