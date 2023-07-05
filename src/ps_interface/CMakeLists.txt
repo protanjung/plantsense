@@ -9,7 +9,8 @@ project(ps_interface)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   message_generation
-  ps_ros_lib
+  roscpp
+  std_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -107,7 +108,7 @@ generate_messages(
 catkin_package(
   # INCLUDE_DIRS include
   LIBRARIES ps_interface
-  CATKIN_DEPENDS message_runtime ps_ros_lib
+  CATKIN_DEPENDS message_runtime roscpp std_msgs
   # DEPENDS system_lib
 )
 
