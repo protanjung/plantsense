@@ -15,4 +15,9 @@
     <include file="$(find ps_ros_lib)/launch/ps_ros_lib.launch">
         <arg name="log_path" value="$(arg log_path)" />
     </include>
+
+    <!--  -->
+
+    <node name="interface_database" pkg="ps_interface" type="interface_database.py" output="screen" respawn="true" />
+    <node name="interface_gateway" pkg="ps_interface" type="interface_gateway.py" output="screen" respawn="true" />
 </launch>

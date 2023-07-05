@@ -1,0 +1,68 @@
+services:
+  portainer:
+    image: portainer/portainer-ce:2.9.3
+    container_name: portainer
+    restart: always
+    environment:
+      TZ: "Asia/Jakarta"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer-data:/data
+    ports:
+      - 8000:8000
+      - 9443:9443
+
+  mysql:
+    image: mysql:5
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: "opc"
+      MYSQL_DATABASE: "opc"
+      MYSQL_USER: "opc"
+      MYSQL_PASSWORD: "opc"
+      TZ: "Asia/Jakarta"
+    volumes:
+      - ${HOME}/docker-data/mysql/var/lib/mysql:/var/lib/mysql
+    ports:
+      - 3306:3306
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_DATABASE: "opc"
+      POSTGRES_USER: "opc"
+      POSTGRES_PASSWORD: "opc"
+      TZ: "Asia/Jakarta"
+    ports:
+      - 5432:5432
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5
+    container_name: phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: opc
+      PMA_PASSWORD: opc
+      TZ: "Asia/Jakarta"
+    ports:
+      - 8080:80
+
+  prometheus:
+    image: prom/prometheus:v2.43.0
+    container_name: prometheus
+    restart: always
+    environment:
+      TZ: "Asia/Jakarta"
+    volumes:
+      - ${HOME}/docker-data/prometheus/etc/prometheus:/etc/prometheus
+      - ${HOME}/docker-data/prometheus/prometheus:/prometheus
+    ports:
+      - 9090:9090
+
+volumes:
+  portainer-data:
