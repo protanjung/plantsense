@@ -57,6 +57,8 @@ add_service_files(
   FILES
   db_insert.srv
   db_select.srv
+  db_update.srv
+  db_upsert.srv
   db_delete.srv
 )
 
