@@ -81,8 +81,8 @@ class Routine():
 
         self.megawatt_from_value_manual = float(self.fuel_megawatt_value_manual)
         self.megawatt_from_tag_manual = float(response_df.sum(numeric_only=True)["value"])
-        self.volume_from_value_manual = self.megawatt_from_value_manual * float(self.fuel_sfc) * 1000  # TODO: Check formula, ask them!
-        self.volume_from_tag_manual = self.megawatt_from_tag_manual * float(self.fuel_sfc) * 1000  # TODO: Check formula, ask them!
+        self.volume_from_value_manual = self.megawatt_from_value_manual * float(self.fuel_sfc) * 24
+        self.volume_from_tag_manual = self.megawatt_from_tag_manual * float(self.fuel_sfc) * 24
         self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_volume_from_value_manual", str(self.volume_from_value_manual)], "name")
         self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_volume_from_tag_manual", str(self.volume_from_tag_manual)], "name")
 
@@ -180,7 +180,7 @@ class Routine():
         param["megawatt"] = float(request.form["megawatt"])
         param["sfc"] = float(request.form["sfc"])
 
-        volume = param["megawatt"] * param["sfc"] * 1000  # TODO: Check formula, ask them!
+        volume = param["megawatt"] * param["sfc"] * 24
         result = routine.optimize_fuel(param["megawatt"], volume)
 
         return jsonify(result)
