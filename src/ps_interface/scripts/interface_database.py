@@ -114,6 +114,10 @@ class InterfaceDatabase():
         tbl_data_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "FLOAT NOT NULL", "TIMESTAMP NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_data_last", tbl_data_names, tbl_data_parameters)
 
+        tbl_inference_output_names = ["id", "value", "timestamp_local"]
+        tbl_inference_output_parameters = ["SERIAL NOT NULL PRIMARY KEY", "VARCHAR NOT NULL", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"]
+        self.db_create_table(self.db_schema, "tbl_inference_output", tbl_inference_output_names, tbl_inference_output_parameters)
+
         return 0
 
     # --------------------------------------------------------------------------
