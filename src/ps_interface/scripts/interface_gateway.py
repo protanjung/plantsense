@@ -23,14 +23,14 @@ class InterfaceGateway():
         try:
             response = requests.get(self.gw_url_data)
             if response.status_code != 200:
-                rospy.logerr("Error: %s", response.text)
+                # rospy.logerr("Error: %s", response.text)
                 return
             response_json = response.json()
             if response_json["status"] != 0:
-                rospy.logerr("Error: %s", response_json["error"])
+                # rospy.logerr("Error: %s", response_json["error"])
                 return
         except Exception as e:
-            rospy.logerr("Error: %s", e)
+            # rospy.logerr("Error: %s", e)
             return
 
         msg_opc = self.data_to_opcs(response_json)

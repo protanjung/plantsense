@@ -114,8 +114,55 @@ class InterfaceDatabase():
         tbl_data_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "FLOAT NOT NULL", "TIMESTAMP NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_data_last", tbl_data_names, tbl_data_parameters)
 
-        tbl_inference_output_names = ["id", "value", "timestamp_local"]
-        tbl_inference_output_parameters = ["SERIAL NOT NULL PRIMARY KEY", "VARCHAR NOT NULL", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"]
+        tbl_inference_output_names = [
+            "id",
+            "value",
+            "timestamp_local",
+            "cv174_sv",
+            "cv174_fb",
+            "cv165_sv",
+            "cv165_fb",
+            "fuel_gas_flow",
+            "cv147a_sv",
+            "cv147a_fb",
+            "cv147b_sv",
+            "cv147b_fb",
+            "cv135a_sv",
+            "cv135a_fb",
+            "fuel_oil_flow",
+            "comb_shell_press",
+            "bp_avg_temp",
+            "rulebased0",
+            "rulebased1",
+            "rulebased2",
+            "rulebased3",
+            "rulebased4"
+        ]
+        tbl_inference_output_parameters = [
+            "SERIAL NOT NULL PRIMARY KEY",
+            "VARCHAR NOT NULL",
+            "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP",
+            "FLOAT NOT NULL",
+            "FLOAT NOT NULL",
+            "FLOAT NOT NULL",
+            "FLOAT NOT NULL",
+            "FLOAT NOT NULL",
+            "FLOAT NOT NULL",
+            "FLOAT NOT NULL",
+            "FLOAT NOT NULL",
+            "FLOAT NOT NULL",
+            "FLOAT NOT NULL",
+            "FLOAT NOT NULL",
+            "FLOAT NOT NULL",
+            "FLOAT NOT NULL",
+            "FLOAT NOT NULL",
+            "FLOAT NOT NULL",
+            "VARCHAR NOT NULL",
+            "VARCHAR NOT NULL",
+            "VARCHAR NOT NULL",
+            "VARCHAR NOT NULL",
+            "VARCHAR NOT NULL",
+        ]
         self.db_create_table(self.db_schema, "tbl_inference_output", tbl_inference_output_names, tbl_inference_output_parameters)
 
         return 0
@@ -123,16 +170,50 @@ class InterfaceDatabase():
     # --------------------------------------------------------------------------
 
     def db_create_table(self, table_schema, table_name, column_names, column_parameters):
-        sql = "CREATE TABLE IF NOT EXISTS " + table_schema + "." + table_name + " ("
-        for i in range(len(column_names)):
-            sql += column_names[i] + " " + column_parameters[i]
-            if i != len(column_names) - 1:
-                sql += ", "
-        sql += ")"
+        is_exist = False
+        is_same = False
+
+        sql = "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = '" + table_schema + "' AND table_name = '" + table_name + "')"
         self.mutex_db.acquire()
         self.myCursor.execute(sql)
+        response = self.myCursor.fetchall()
         self.myDatabase.commit()
         self.mutex_db.release()
+        if response[0][0]:
+            is_exist = True
+
+        if is_exist:
+            sql = "SELECT column_name, data_type FROM information_schema.columns WHERE table_schema = '" + table_schema + "' AND table_name = '" + table_name + "'"
+            self.mutex_db.acquire()
+            self.myCursor.execute(sql)
+            response = self.myCursor.fetchall()
+            self.myDatabase.commit()
+            self.mutex_db.release()
+            if len(response) == len(column_names):
+                is_same = True
+                for i in range(len(response)):
+                    if response[i][0] != column_names[i]:
+                        is_same = False
+
+        if is_exist and not is_same:
+            sql = "DROP TABLE " + table_schema + "." + table_name
+            self.mutex_db.acquire()
+            self.myCursor.execute(sql)
+            self.myDatabase.commit()
+            self.mutex_db.release()
+            is_exist = False
+
+        if not is_exist:
+            sql = "CREATE TABLE IF NOT EXISTS " + table_schema + "." + table_name + " ("
+            for i in range(len(column_names)):
+                sql += column_names[i] + " " + column_parameters[i]
+                if i != len(column_names) - 1:
+                    sql += ", "
+            sql += ")"
+            self.mutex_db.acquire()
+            self.myCursor.execute(sql)
+            self.myDatabase.commit()
+            self.mutex_db.release()
 
     def db_insert(self, table_schema, table_name, columns, values):
         sql = "INSERT INTO " + table_schema + "." + table_name + " ("
