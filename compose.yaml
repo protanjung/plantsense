@@ -80,6 +80,13 @@ services:
       - 5000:5000
       - 5001:5001
 
+  ai:
+    image: messier12/pjb-ai:latest
+    container_name: ai
+    restart: always
+    environment:
+      TZ: "Asia/Jakarta"
+
 volumes:
   portainer-data:
   grafana-var-lib-grafana:
