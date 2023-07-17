@@ -123,7 +123,7 @@ class InterfaceDatabase():
         for i in range(48):
             tbl_fuel_rencana_names.append("value" + str(i))
         tbl_fuel_rencana_names.append("value_total")
-        tbl_fuel_rencana_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "DATE NOT NULL", "FLOAT NOT NULL"]
+        tbl_fuel_rencana_parameters = ["SERIAL NOT NULL", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "DATE NOT NULL PRIMARY KEY", "FLOAT NOT NULL"]
         for i in range(48):
             tbl_fuel_rencana_parameters.append("FLOAT NOT NULL")
         tbl_fuel_rencana_parameters.append("FLOAT NOT NULL")
@@ -131,14 +131,11 @@ class InterfaceDatabase():
             tbl_fuel_rencana_parameters.append("VARCHAR NOT NULL")
         tbl_fuel_rencana_parameters.append("VARCHAR NOT NULL")
         self.db_create_table(self.db_schema, "tbl_fuel_rencana", tbl_fuel_rencana_names, tbl_fuel_rencana_parameters)
-        tbl_fuel_rencana_parameters[2] = "DATE NOT NULL PRIMARY KEY"
         self.db_create_table(self.db_schema, "tbl_fuel_rencana_last", tbl_fuel_rencana_names[2:], tbl_fuel_rencana_parameters[2:])
 
-        tbl_fuel_realisasi_names = ["id", "timestamp_local", "date", "sfc", "mw_per30min", "mw_per60min", "result_per30min", "result_per60min"]
-        tbl_fuel_realisasi_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "DATE NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "VARCHAR NOT NULL", "VARCHAR NOT NULL"]
+        tbl_fuel_realisasi_names = ["id", "timestamp_local", "sfc", "mw", "result"]
+        tbl_fuel_realisasi_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "FLOAT NOT NULL", "FLOAT NOT NULL", "VARCHAR NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_fuel_realisasi", tbl_fuel_realisasi_names, tbl_fuel_realisasi_parameters)
-        tbl_fuel_realisasi_parameters[2] = "DATE NOT NULL PRIMARY KEY"
-        self.db_create_table(self.db_schema, "tbl_fuel_realisasi_last", tbl_fuel_realisasi_names[2:], tbl_fuel_realisasi_parameters[2:])
 
         # ==============================
         # Inference
@@ -277,6 +274,21 @@ class InterfaceDatabase():
         response = self.myCursor.fetchall()
         self.myDatabase.commit()
         self.mutex_db.release()
+
+        if len(columns) != len(response[0]):
+            sql = "SELECT column_name FROM information_schema.columns WHERE table_schema = '" + table_schema + "' AND table_name = '" + table_name + "'"
+            self.mutex_db.acquire()
+            self.myCursor.execute(sql)
+            response_column_names = self.myCursor.fetchall()
+            self.myDatabase.commit()
+            self.mutex_db.release()
+
+            column_names = []
+            for i in range(len(response_column_names)):
+                column_names.append(response_column_names[i][0])
+
+            return pd.DataFrame(response, columns=column_names).to_json(orient="split", indent=2)
+
         return pd.DataFrame(response, columns=columns).to_json(orient="split", indent=2)
 
     def db_update(self, table_schema, table_name, columns, values, where):
