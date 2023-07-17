@@ -34,9 +34,11 @@ class Routine():
         self.cli_db_upsert = rospy.ServiceProxy("db_upsert", db_upsert)
         self.cli_db_delete = rospy.ServiceProxy("db_delete", db_delete)
 
-        self.opcs_pool = pd.DataFrame(columns=["name", "value", "timestamp", "timestamp_local"])
-        self.fuel_param = pd.DataFrame(columns=["name", "min_volume", "max_volume", "price"])
+        self.isFirst_30min = True
+        self.isFirst_60min = True
 
+        self.df_opcs_pool = pd.DataFrame(columns=["name", "value", "timestamp", "timestamp_local"])
+        self.df_fuel_param = pd.DataFrame(columns=["name", "min_volume", "max_volume", "price"])
         self.gauge_opc_data = Gauge("opc_data", "opc_data", ["name"])
 
         if self.routine_init() == -1:
@@ -45,104 +47,112 @@ class Routine():
     # --------------------------------------------------------------------------
 
     def cllbck_tim_1hz(self, event):
-        for opc in self.opcs_pool.itertuples():
-            self.cli_db_insert("tbl_data",
-                               ["name", "value", "timestamp"],
-                               [opc.name, str(opc.value), opc.timestamp])
-            self.cli_db_insert("tbl_data_last60sec",
-                               ["name", "value", "timestamp"],
-                               [opc.name, str(opc.value), opc.timestamp])
-            self.cli_db_insert("tbl_data_last1800sec",
-                               ["name", "value", "timestamp"],
-                               [opc.name, str(opc.value), opc.timestamp])
+        for opc in self.df_opcs_pool.itertuples():
+            self.cli_db_insert("tbl_data", ["name", "value", "timestamp"], [opc.name, str(opc.value), opc.timestamp])
+            self.cli_db_insert("tbl_data_last60sec", ["name", "value", "timestamp"], [opc.name, str(opc.value), opc.timestamp])
+            self.cli_db_insert("tbl_data_last1800sec", ["name", "value", "timestamp"], [opc.name, str(opc.value), opc.timestamp])
         self.cli_db_delete("tbl_data_last60sec", "timestamp_local < now() - interval '60 second'")
         self.cli_db_delete("tbl_data_last1800sec", "timestamp_local < now() - interval '1800 second'")
+
+        # ==============================
+
+        response_json = self.cli_db_select("tbl_fuel_param", ["name", "min_volume", "max_volume", "price"], "")
+        self.df_fuel_param = pd.read_json(response_json.response, orient="split")
+
+        # ==============================
+
+        # self.fuel_sfc = rospy.get_param("fuel_sfc", 0.0)
+        # self.fuel_megawatt_value_manual = rospy.get_param("fuel_megawatt_value_manual", 0.0)
+        # self.fuel_megawatt_tag_manual = rospy.get_param("fuel_megawatt_tag_manual", "")
+
+        # megawatt_value_from_tag = 0
+        # for tag in self.fuel_megawatt_tag_manual.split(";"):
+        #     megawatt_value_from_tag += self.df_opcs_pool[self.df_opcs_pool["name"] == tag].iloc[0]["value"]
+
+        # megawatt_from_value_manual = float(self.fuel_megawatt_value_manual)
+        # megawatt_from_tag_manual = float(megawatt_value_from_tag)
+        # volume_from_value_manual = megawatt_from_value_manual * self.fuel_sfc * 24
+        # volume_from_tag_manual = megawatt_from_tag_manual * self.fuel_sfc * 24
+        # self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_megawatt_from_value_manual", str(megawatt_from_value_manual)], "name")
+        # self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_megawatt_from_tag_manual", str(megawatt_from_tag_manual)], "name")
+        # self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_volume_from_value_manual", str(volume_from_value_manual)], "name")
+        # self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_volume_from_tag_manual", str(volume_from_tag_manual)], "name")
 
     # --------------------------------------------------------------------------
 
     def cllbck_sub_opcs(self, msg):
         for opc in msg.opcs:
             # Find in self.opcs_pool to check whether the opc is already in the pool
-            index = self.opcs_pool[self.opcs_pool["name"] == opc.name].index
+            index = self.df_opcs_pool[self.df_opcs_pool["name"] == opc.name].index
 
+            # If the opc is already in the pool, update the value and timestamp in the pool
             if len(index) != 0:
-                # If the opc is already in the pool, check whether the timestamp is changed
-                # If the value is changed, update the value and timestamp on the database
-                if self.opcs_pool.loc[index[0], "timestamp"] < opc.timestamp:
-                    self.cli_db_upsert("tbl_data_last",
-                                       ["name", "value", "timestamp"],
-                                       [opc.name, str(opc.value), opc.timestamp],
-                                       "name")
+                if self.df_opcs_pool.loc[index[0], "timestamp"] < opc.timestamp:
+                    self.df_opcs_pool.loc[index[0]] = [opc.name, opc.value, opc.timestamp, time.time()]
+                    self.cli_db_upsert("tbl_data_last", ["name", "value", "timestamp"], [opc.name, str(opc.value), opc.timestamp], "name")
                     self.gauge_opc_data.labels(opc.name).set(opc.value)
+            # If the opc is not in the pool, insert the opc into the pool
             else:
-                # If the opc is not in the pool, update the value and timestamp on the database
-                self.cli_db_upsert("tbl_data_last",
-                                   ["name", "value", "timestamp"],
-                                   [opc.name, str(opc.value), opc.timestamp],
-                                   "name")
+                self.df_opcs_pool.loc[len(self.df_opcs_pool)] = [opc.name, opc.value, opc.timestamp, time.time()]
+                self.cli_db_upsert("tbl_data_last", ["name", "value", "timestamp"], [opc.name, str(opc.value), opc.timestamp], "name")
                 self.gauge_opc_data.labels(opc.name).set(opc.value)
-
-            if len(index) != 0:
-                # If the opc is already in the pool, update the value and timestamp in the pool
-                self.opcs_pool.loc[index[0]] = [opc.name, opc.value, opc.timestamp, time.time()]
-            else:
-                # If the opc is not in the pool, insert the opc into the pool
-                self.opcs_pool.loc[len(self.opcs_pool)] = [opc.name, opc.value, opc.timestamp, time.time()]
 
     # --------------------------------------------------------------------------
 
     def routine_init(self):
         time.sleep(2)
 
+        # Prometheus
         start_http_server(5001)
 
-        flask_thread = threading.Thread(target=self.thread_flask)
-        flask_thread.daemon = True
-        flask_thread.start()
+        # # Flask
+        # flask_thread = threading.Thread(target=self.thread_flask)
+        # flask_thread.daemon = True
+        # flask_thread.start()
 
         return 0
 
-    def optimize_fuel(self, megawatt, volume):
-        num_of_variable = len(self.fuel_param)
+#     def optimize_fuel(self, megawatt, volume):
+#         num_of_variable = len(self.fuel_param)
 
-        variable = [LpVariable(self.fuel_param["name"][i],
-                               self.fuel_param["min_volume"][i],
-                               self.fuel_param["max_volume"][i]) for i in range(num_of_variable)]
+#         variable = [LpVariable(self.fuel_param["name"][i],
+#                                self.fuel_param["min_volume"][i],
+#                                self.fuel_param["max_volume"][i]) for i in range(num_of_variable)]
 
-        problem = LpProblem("Optimization", LpMinimize)
-        problem += lpSum([self.fuel_param["price"][i] * variable[i] for i in range(num_of_variable)])
-        problem += lpSum([variable[i] for i in range(num_of_variable)]) == volume
+#         problem = LpProblem("Optimization", LpMinimize)
+#         problem += lpSum([self.fuel_param["price"][i] * variable[i] for i in range(num_of_variable)])
+#         problem += lpSum([variable[i] for i in range(num_of_variable)]) == volume
 
-        status = problem.solve(PULP_CBC_CMD(msg=0))
+#         status = problem.solve(PULP_CBC_CMD(msg=0))
 
-        result = {}
-        result["status"] = LpStatus[status]
-        result["megawatt"] = megawatt
-        result["fuel_volume"] = volume
-        result["fuel_cost"] = problem.objective.value()
-        result["fuel_purchase"] = {}
-        for i in range(num_of_variable):
-            result["fuel_purchase"][self.fuel_param["name"][i]] = variable[i].value()
+#         result = {}
+#         result["status"] = LpStatus[status]
+#         result["megawatt"] = megawatt
+#         result["fuel_volume"] = volume
+#         result["fuel_cost"] = problem.objective.value()
+#         result["fuel_purchase"] = {}
+#         for i in range(num_of_variable):
+#             result["fuel_purchase"][self.fuel_param["name"][i]] = variable[i].value()
 
-        return result
+#         return result
 
-    # --------------------------------------------------------------------------
+#     # --------------------------------------------------------------------------
 
-    app = Flask(__name__)
+#     app = Flask(__name__)
 
-    @app.route("/optimize", methods=["POST"])
-    def flask_optimize():
-        param = {}
-        param["megawatt"] = float(request.form["megawatt"])
-        param["sfc"] = float(request.form["sfc"])
+#     @app.route("/optimize", methods=["POST"])
+#     def flask_optimize():
+#         param = {}
+#         param["megawatt"] = float(request.form["megawatt"])
+#         param["sfc"] = float(request.form["sfc"])
 
-        volume = param["megawatt"] * param["sfc"] * 24
-        result = routine.optimize_fuel(param["megawatt"], volume)
+#         volume = param["megawatt"] * param["sfc"] * 24
+#         result = routine.optimize_fuel(param["megawatt"], volume)
 
-        return jsonify(result)
+#         return jsonify(result)
 
-    def thread_flask(self):
-        self.app.run(host="0.0.0.0", port=5000)
+#     def thread_flask(self):
+#         self.app.run(host="0.0.0.0", port=5000)
 
 
 if __name__ == "__main__":
