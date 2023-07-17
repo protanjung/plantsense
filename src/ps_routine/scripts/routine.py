@@ -58,50 +58,6 @@ class Routine():
         self.cli_db_delete("tbl_data_last60sec", "timestamp_local < now() - interval '60 second'")
         self.cli_db_delete("tbl_data_last1800sec", "timestamp_local < now() - interval '1800 second'")
 
-        # ==============================
-
-        response_json = self.cli_db_select("tbl_fuel_param", ["name", "min_volume", "max_volume", "price"], "").response
-        self.fuel_param = pd.read_json(response_json, orient="split")
-
-        # ==============================
-
-        self.fuel_sfc = rospy.get_param("fuel_sfc", 0.0)
-        self.fuel_megawatt_value_manual = rospy.get_param("fuel_megawatt_value_manual", 0.0)
-        self.fuel_megawatt_tag_manual = rospy.get_param("fuel_megawatt_tag_manual", "")
-
-        # ==============================
-
-        where = ""
-        for tag in self.fuel_megawatt_tag_manual.split(";"):
-            where += "name = '" + tag + "' OR "
-        where = where[:-4]
-
-        response_json = self.cli_db_select("tbl_data_last", ["name", "value", "timestamp"], where).response
-        response_df = pd.read_json(response_json, orient="split")
-
-        self.megawatt_from_value_manual = float(self.fuel_megawatt_value_manual)
-        self.megawatt_from_tag_manual = float(response_df.sum(numeric_only=True)["value"])
-        self.volume_from_value_manual = self.megawatt_from_value_manual * float(self.fuel_sfc) * 24
-        self.volume_from_tag_manual = self.megawatt_from_tag_manual * float(self.fuel_sfc) * 24
-        self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_volume_from_value_manual", str(self.volume_from_value_manual)], "name")
-        self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_volume_from_tag_manual", str(self.volume_from_tag_manual)], "name")
-
-        # ==============================
-
-        if time.localtime().tm_sec != 0:
-            return
-
-        # ==============================
-
-        result_total_dict = {}
-        result_total_dict["by_value"] = self.optimize_fuel(self.megawatt_from_value_manual, self.volume_from_value_manual)
-        result_total_dict["by_tag"] = self.optimize_fuel(self.megawatt_from_tag_manual, self.volume_from_tag_manual)
-        result_total_json = json.dumps(result_total_dict, indent=2)
-
-        self.cli_db_delete("tbl_fuel_last", "")
-        self.cli_db_insert("tbl_fuel_last", ["result"], [result_total_json])
-        self.cli_db_insert("tbl_fuel", ["result"], [result_total_json])
-
     # --------------------------------------------------------------------------
 
     def cllbck_sub_opcs(self, msg):

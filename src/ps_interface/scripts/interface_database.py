@@ -92,19 +92,6 @@ class InterfaceDatabase():
         tbl_param_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "VARCHAR NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_param", tbl_param_names, tbl_param_parameters)
 
-        tbl_fuel_param_names = ["name", "min_volume", "max_volume", "price"]
-        tbl_fuel_param_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL"]
-        self.db_create_table(self.db_schema, "tbl_fuel_param", tbl_fuel_param_names, tbl_fuel_param_parameters)
-
-        tbl_fuel_optimization_names = ["id", "result", "timestamp_local"]
-        tbl_fuel_optimization_parameters = ["SERIAL NOT NULL PRIMARY KEY", "VARCHAR NOT NULL", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"]
-        self.db_create_table(self.db_schema, "tbl_fuel", tbl_fuel_optimization_names, tbl_fuel_optimization_parameters)
-        self.db_create_table(self.db_schema, "tbl_fuel_per60sec", tbl_fuel_optimization_names, tbl_fuel_optimization_parameters)
-        self.db_create_table(self.db_schema, "tbl_fuel_per1800sec", tbl_fuel_optimization_names, tbl_fuel_optimization_parameters)
-        tbl_fuel_optimization_names = ["result"]
-        tbl_fuel_optimization_parameters = ["VARCHAR NOT NULL"]
-        self.db_create_table(self.db_schema, "tbl_fuel_last", tbl_fuel_optimization_names, tbl_fuel_optimization_parameters)
-
         tbl_data_names = ["id", "name", "value", "timestamp", "timestamp_local"]
         tbl_data_parameters = ["SERIAL NOT NULL PRIMARY KEY", "VARCHAR NOT NULL", "FLOAT NOT NULL", "TIMESTAMP NOT NULL", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP"]
         self.db_create_table(self.db_schema, "tbl_data", tbl_data_names, tbl_data_parameters)
