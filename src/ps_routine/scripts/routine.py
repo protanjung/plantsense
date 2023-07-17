@@ -59,36 +59,47 @@ class Routine():
         response_json = self.cli_db_select("tbl_fuel_param", ["name", "min_volume", "max_volume", "price"], "")
         self.df_fuel_param = pd.read_json(response_json.response, orient="split")
 
-        # ==============================
+        # ----------
 
-        # self.fuel_sfc = rospy.get_param("fuel_sfc", 0.0)
-        # self.fuel_megawatt_value_manual = rospy.get_param("fuel_megawatt_value_manual", 0.0)
-        # self.fuel_megawatt_tag_manual = rospy.get_param("fuel_megawatt_tag_manual", "")
+        self.fuel_sfc = rospy.get_param("fuel_sfc", 0.0)
+        self.fuel_megawatt_value_manual = rospy.get_param("fuel_megawatt_value_manual", 0.0)
+        self.fuel_megawatt_tag_manual = rospy.get_param("fuel_megawatt_tag_manual", "")
 
-        # megawatt_value_from_tag = 0
-        # for tag in self.fuel_megawatt_tag_manual.split(";"):
-        #     megawatt_value_from_tag += self.df_opcs_pool[self.df_opcs_pool["name"] == tag].iloc[0]["value"]
+        # ----------
 
-        # megawatt_from_value_manual = float(self.fuel_megawatt_value_manual)
-        # megawatt_from_tag_manual = float(megawatt_value_from_tag)
-        # volume_from_value_manual = megawatt_from_value_manual * self.fuel_sfc * 24
-        # volume_from_tag_manual = megawatt_from_tag_manual * self.fuel_sfc * 24
-        # self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_megawatt_from_value_manual", str(megawatt_from_value_manual)], "name")
-        # self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_megawatt_from_tag_manual", str(megawatt_from_tag_manual)], "name")
-        # self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_volume_from_value_manual", str(volume_from_value_manual)], "name")
-        # self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_volume_from_tag_manual", str(volume_from_tag_manual)], "name")
+        tags = self.fuel_megawatt_tag_manual.split(";")
+        indexes = self.df_opcs_pool[self.df_opcs_pool["name"].isin(tags)].index
+
+        megawatt_value_from_tag = 0.0
+        for index in indexes:
+            megawatt_value_from_tag += self.df_opcs_pool.loc[index, "value"]
+
+        # ----------
+
+        megawatt_from_value_manual = float(self.fuel_megawatt_value_manual)
+        megawatt_from_tag_manual = float(megawatt_value_from_tag)
+        volume_from_value_manual = megawatt_from_value_manual * float(self.fuel_sfc) * 24.0
+        volume_from_tag_manual = megawatt_from_tag_manual * float(self.fuel_sfc) * 24.0
+        self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_megawatt_from_value_manual", str(megawatt_from_value_manual)], "name")
+        self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_megawatt_from_tag_manual", str(megawatt_from_tag_manual)], "name")
+        self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_volume_from_value_manual", str(volume_from_value_manual)], "name")
+        self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_volume_from_tag_manual", str(volume_from_tag_manual)], "name")
+
+        # ----------
+
+        
 
     # --------------------------------------------------------------------------
 
     def cllbck_sub_opcs(self, msg):
         for opc in msg.opcs:
             # Find in self.opcs_pool to check whether the opc is already in the pool
-            index = self.df_opcs_pool[self.df_opcs_pool["name"] == opc.name].index
+            indexes = self.df_opcs_pool[self.df_opcs_pool["name"] == opc.name].index
 
             # If the opc is already in the pool, update the value and timestamp in the pool
-            if len(index) != 0:
-                if self.df_opcs_pool.loc[index[0], "timestamp"] < opc.timestamp:
-                    self.df_opcs_pool.loc[index[0]] = [opc.name, opc.value, opc.timestamp, time.time()]
+            if len(indexes) != 0:
+                if self.df_opcs_pool.loc[indexes[0], "timestamp"] < opc.timestamp:
+                    self.df_opcs_pool.loc[indexes[0]] = [opc.name, opc.value, opc.timestamp, time.time()]
                     self.cli_db_upsert("tbl_data_last", ["name", "value", "timestamp"], [opc.name, str(opc.value), opc.timestamp], "name")
                     self.gauge_opc_data.labels(opc.name).set(opc.value)
             # If the opc is not in the pool, insert the opc into the pool
@@ -105,54 +116,62 @@ class Routine():
         # Prometheus
         start_http_server(5001)
 
-        # # Flask
-        # flask_thread = threading.Thread(target=self.thread_flask)
-        # flask_thread.daemon = True
-        # flask_thread.start()
+        # Flask
+        flask_thread = threading.Thread(target=self.thread_flask)
+        flask_thread.daemon = True
+        flask_thread.start()
 
         return 0
 
-#     def optimize_fuel(self, megawatt, volume):
-#         num_of_variable = len(self.fuel_param)
+    # --------------------------------------------------------------------------
 
-#         variable = [LpVariable(self.fuel_param["name"][i],
-#                                self.fuel_param["min_volume"][i],
-#                                self.fuel_param["max_volume"][i]) for i in range(num_of_variable)]
+    def optimize_fuel(self, sfc, megawatt, period):
+        number_of_variables = len(self.df_fuel_param)
 
-#         problem = LpProblem("Optimization", LpMinimize)
-#         problem += lpSum([self.fuel_param["price"][i] * variable[i] for i in range(num_of_variable)])
-#         problem += lpSum([variable[i] for i in range(num_of_variable)]) == volume
+        variables = [LpVariable(self.df_fuel_param["name"][i],
+                                self.df_fuel_param["min_volume"][i] * period / 24,
+                                self.df_fuel_param["max_volume"][i] * period / 24) for i in range(number_of_variables)]
 
-#         status = problem.solve(PULP_CBC_CMD(msg=0))
+        problem = LpProblem("Optimization", LpMinimize)
+        problem += lpSum([self.df_fuel_param["price"][i] * variables[i] for i in range(number_of_variables)])
+        problem += lpSum([variables[i] for i in range(number_of_variables)]) == float(sfc) * float(megawatt) * 24.0
 
-#         result = {}
-#         result["status"] = LpStatus[status]
-#         result["megawatt"] = megawatt
-#         result["fuel_volume"] = volume
-#         result["fuel_cost"] = problem.objective.value()
-#         result["fuel_purchase"] = {}
-#         for i in range(num_of_variable):
-#             result["fuel_purchase"][self.fuel_param["name"][i]] = variable[i].value()
+        status = problem.solve(PULP_CBC_CMD(msg=0))
 
-#         return result
+        result = {}
+        result["status"] = LpStatus[status]
+        result["sfc"] = sfc
+        result["megawatt"] = megawatt
+        result["volume"] = float(sfc) * float(megawatt) * 24.0
+        result["period"] = period
+        result["cost"] = problem.objective.value()
+        result["purchase"] = {}
+        for i in range(number_of_variables):
+            result["purchase"][self.df_fuel_param["name"][i]] = variables[i].value()
 
-#     # --------------------------------------------------------------------------
+        return result
 
-#     app = Flask(__name__)
+    # --------------------------------------------------------------------------
 
-#     @app.route("/optimize", methods=["POST"])
-#     def flask_optimize():
-#         param = {}
-#         param["megawatt"] = float(request.form["megawatt"])
-#         param["sfc"] = float(request.form["sfc"])
+    app = Flask(__name__)
 
-#         volume = param["megawatt"] * param["sfc"] * 24
-#         result = routine.optimize_fuel(param["megawatt"], volume)
+    @app.route("/trigger", methods=["GET"])
+    def flask_index():
+        return "Hello World!"
 
-#         return jsonify(result)
+    @app.route("/optimize", methods=["GET"])
+    def flask_optimize():
+        param = {}
+        param["sfc"] = float(request.form["sfc"])
+        param["megawatt"] = float(request.form["megawatt"])
+        param["period"] = float(request.form["period"])
 
-#     def thread_flask(self):
-#         self.app.run(host="0.0.0.0", port=5000)
+        result = routine.optimize_fuel(param["sfc"], param["megawatt"], param["period"])
+
+        return jsonify(result)
+
+    def thread_flask(self):
+        self.app.run(host="0.0.0.0", port=5000)
 
 
 if __name__ == "__main__":

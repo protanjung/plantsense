@@ -105,6 +105,7 @@ class InterfaceDatabase():
         self.db_create_table(self.db_schema, "tbl_data", tbl_data_names, tbl_data_parameters)
         self.db_create_table(self.db_schema, "tbl_data_last60sec", tbl_data_names, tbl_data_parameters)
         self.db_create_table(self.db_schema, "tbl_data_last1800sec", tbl_data_names, tbl_data_parameters)
+        tbl_data_parameters[2] = "VARCHAR NOT NULL PRIMARY KEY"
         self.db_create_table(self.db_schema, "tbl_data_last", tbl_data_names[2:], tbl_data_parameters[2:])
 
         # ==============================
@@ -115,14 +116,14 @@ class InterfaceDatabase():
         tbl_fuel_param_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_fuel_param", tbl_fuel_param_names, tbl_fuel_param_parameters)
 
-        tbl_fuel_rencana_names = ["id", "timestamp_local", "sfc"]
+        tbl_fuel_rencana_names = ["id", "timestamp_local", "date", "sfc"]
         for i in range(48):
             tbl_fuel_rencana_names.append("mw" + str(i))
         tbl_fuel_rencana_names.append("mw_total")
         for i in range(48):
             tbl_fuel_rencana_names.append("value" + str(i))
         tbl_fuel_rencana_names.append("value_total")
-        tbl_fuel_rencana_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "FLOAT NOT NULL"]
+        tbl_fuel_rencana_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "DATE NOT NULL", "FLOAT NOT NULL"]
         for i in range(48):
             tbl_fuel_rencana_parameters.append("FLOAT NOT NULL")
         tbl_fuel_rencana_parameters.append("FLOAT NOT NULL")
@@ -130,11 +131,13 @@ class InterfaceDatabase():
             tbl_fuel_rencana_parameters.append("VARCHAR NOT NULL")
         tbl_fuel_rencana_parameters.append("VARCHAR NOT NULL")
         self.db_create_table(self.db_schema, "tbl_fuel_rencana", tbl_fuel_rencana_names, tbl_fuel_rencana_parameters)
+        tbl_fuel_rencana_parameters[2] = "DATE NOT NULL PRIMARY KEY"
         self.db_create_table(self.db_schema, "tbl_fuel_rencana_last", tbl_fuel_rencana_names[2:], tbl_fuel_rencana_parameters[2:])
 
-        tbl_fuel_realisasi_names = ["id", "timestamp_local", "sfc", "mw_per30min", "mw_per60min", "result_per30min", "result_per60min"]
-        tbl_fuel_realisasi_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "VARCHAR NOT NULL", "VARCHAR NOT NULL"]
+        tbl_fuel_realisasi_names = ["id", "timestamp_local", "date", "sfc", "mw_per30min", "mw_per60min", "result_per30min", "result_per60min"]
+        tbl_fuel_realisasi_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "DATE NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "VARCHAR NOT NULL", "VARCHAR NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_fuel_realisasi", tbl_fuel_realisasi_names, tbl_fuel_realisasi_parameters)
+        tbl_fuel_realisasi_parameters[2] = "DATE NOT NULL PRIMARY KEY"
         self.db_create_table(self.db_schema, "tbl_fuel_realisasi_last", tbl_fuel_realisasi_names[2:], tbl_fuel_realisasi_parameters[2:])
 
         # ==============================
