@@ -21,7 +21,7 @@ class InterfaceGateway():
 
     def cllbck_tim_2hz(self, event):
         try:
-            response = requests.get(self.gw_url_data)
+            response = requests.get(self.gw_url_data, timeout=1)
             if response.status_code != 200:
                 # rospy.logerr("Error: %s", response.text)
                 return
