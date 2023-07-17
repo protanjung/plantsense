@@ -14,6 +14,7 @@ import pandas as pd
 from pulp import LpMinimize, LpProblem, LpStatus, LpVariable, lpSum
 from pulp.apis import PULP_CBC_CMD
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from prometheus_client import start_http_server, Gauge
 
 
@@ -25,6 +26,7 @@ class Routine():
         self.fuel_megawatt_tag_manual = rospy.get_param("fuel_megawatt_tag_manual", "")
         # =====Timer
         self.tim_1hz = rospy.Timer(rospy.Duration(1), self.cllbck_tim_1hz)
+        self.tim_2hz = rospy.Timer(rospy.Duration(0.5), self.cllbck_tim_2hz)
         # =====Subscriber
         self.sub_opcs = rospy.Subscriber("opcs", opcs, self.cllbck_sub_opcs, queue_size=1)
         # =====ServiceClient
@@ -34,12 +36,17 @@ class Routine():
         self.cli_db_upsert = rospy.ServiceProxy("db_upsert", db_upsert)
         self.cli_db_delete = rospy.ServiceProxy("db_delete", db_delete)
 
-        self.isFirst_30min = True
-        self.isFirst_60min = True
+        self.isFirst1Min = True
+        self.lastMinute = 0
 
         self.df_opcs_pool = pd.DataFrame(columns=["name", "value", "timestamp", "timestamp_local"])
         self.df_fuel_param = pd.DataFrame(columns=["name", "min_volume", "max_volume", "price"])
         self.gauge_opc_data = Gauge("opc_data", "opc_data", ["name"])
+
+        self.megawatt_from_value_manual = 0.0
+        self.megawatt_from_tag_manual = 0.0
+        self.volume_from_value_manual = 0.0
+        self.volume_from_tag_manual = 0.0
 
         if self.routine_init() == -1:
             rospy.signal_shutdown("")
@@ -56,8 +63,8 @@ class Routine():
 
         # ==============================
 
-        response_json = self.cli_db_select("tbl_fuel_param", ["name", "min_volume", "max_volume", "price"], "")
-        self.df_fuel_param = pd.read_json(response_json.response, orient="split")
+        json_fuel_param = self.cli_db_select("tbl_fuel_param", ["name", "min_volume", "max_volume", "price"], "")
+        self.df_fuel_param = pd.read_json(json_fuel_param.response, orient="split")
 
         # ----------
 
@@ -76,18 +83,34 @@ class Routine():
 
         # ----------
 
-        megawatt_from_value_manual = float(self.fuel_megawatt_value_manual)
-        megawatt_from_tag_manual = float(megawatt_value_from_tag)
-        volume_from_value_manual = megawatt_from_value_manual * float(self.fuel_sfc) * 24.0
-        volume_from_tag_manual = megawatt_from_tag_manual * float(self.fuel_sfc) * 24.0
-        self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_megawatt_from_value_manual", str(megawatt_from_value_manual)], "name")
-        self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_megawatt_from_tag_manual", str(megawatt_from_tag_manual)], "name")
-        self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_volume_from_value_manual", str(volume_from_value_manual)], "name")
-        self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_volume_from_tag_manual", str(volume_from_tag_manual)], "name")
+        self.megawatt_from_value_manual = float(self.fuel_megawatt_value_manual)
+        self.megawatt_from_tag_manual = float(megawatt_value_from_tag)
+        self.volume_from_value_manual = self.megawatt_from_value_manual * float(self.fuel_sfc) * 24.0
+        self.volume_from_tag_manual = self.megawatt_from_tag_manual * float(self.fuel_sfc) * 24.0
+        self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_megawatt_from_value_manual", str(self.megawatt_from_value_manual)], "name")
+        self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_megawatt_from_tag_manual", str(self.megawatt_from_tag_manual)], "name")
+        self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_volume_from_value_manual", str(self.volume_from_value_manual)], "name")
+        self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_volume_from_tag_manual", str(self.volume_from_tag_manual)], "name")
+
+    def cllbck_tim_2hz(self, event):
+        if time.localtime().tm_sec != 0:
+            return
+
+        if self.lastMinute == time.localtime().tm_min:
+            return
+
+        self.lastMinute = time.localtime().tm_min
 
         # ----------
 
-        
+        self.result_from_value_manual = json.dumps(self.optimize_fuel(self.fuel_sfc, self.megawatt_from_value_manual, 1 / 1440), indent=2)
+        self.result_from_tag_manual = json.dumps(self.optimize_fuel(self.fuel_sfc, self.megawatt_from_tag_manual, 1 / 1440), indent=2)
+        self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_result_from_value_manual", str(self.result_from_value_manual)], "name")
+        self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_result_from_tag_manual", str(self.result_from_tag_manual)], "name")
+
+        # ----------
+
+        self.cli_db_insert("tbl_fuel_realisasi", ["sfc", "mw", "result"], [str(self.fuel_sfc), str(self.megawatt_from_tag_manual), str(self.result_from_tag_manual)])
 
     # --------------------------------------------------------------------------
 
@@ -111,7 +134,7 @@ class Routine():
     # --------------------------------------------------------------------------
 
     def routine_init(self):
-        time.sleep(2)
+        time.sleep(2.0)
 
         # Prometheus
         start_http_server(5001)
@@ -125,7 +148,7 @@ class Routine():
 
     # --------------------------------------------------------------------------
 
-    def optimize_fuel(self, sfc, megawatt, period):
+    def optimize_fuel(self, sfc: float, megawatt: float, period: float):
         number_of_variables = len(self.df_fuel_param)
 
         variables = [LpVariable(self.df_fuel_param["name"][i],
@@ -134,16 +157,16 @@ class Routine():
 
         problem = LpProblem("Optimization", LpMinimize)
         problem += lpSum([self.df_fuel_param["price"][i] * variables[i] for i in range(number_of_variables)])
-        problem += lpSum([variables[i] for i in range(number_of_variables)]) == float(sfc) * float(megawatt) * 24.0
+        problem += lpSum([variables[i] for i in range(number_of_variables)]) == float(sfc) * float(megawatt) * float(period)
 
         status = problem.solve(PULP_CBC_CMD(msg=0))
 
         result = {}
         result["status"] = LpStatus[status]
-        result["sfc"] = sfc
-        result["megawatt"] = megawatt
+        result["sfc"] = float(sfc)
+        result["megawatt"] = float(megawatt)
         result["volume"] = float(sfc) * float(megawatt) * 24.0
-        result["period"] = period
+        result["period"] = float(period)
         result["cost"] = problem.objective.value()
         result["purchase"] = {}
         for i in range(number_of_variables):
@@ -151,13 +174,46 @@ class Routine():
 
         return result
 
+    def trigger_fuel(self):
+        date = time.strftime("%Y-%m-%d", time.localtime())
+
+        json_row = self.cli_db_select("tbl_fuel_rencana", ["*"], "date = '" + str(date) + "'")
+        df_row = pd.read_json(json_row.response, orient="split")
+
+        # ----------
+
+        if len(df_row) != 1:
+            return "ERROR"
+
+        # ----------
+
+        df_row["sfc"][0] = self.fuel_sfc
+        df_row["value_total"][0] = json.dumps(self.optimize_fuel(df_row["sfc"][0], df_row["mw_total"][0], 24))
+        for i in range(48):
+            df_row["value" + str(i)][0] = json.dumps(self.optimize_fuel(df_row["sfc"][0], df_row["mw" + str(i)][0], 0.5))
+
+        columns = []
+        for i in df_row.columns.tolist()[2:]:
+            columns.append(str(i))
+        values = []
+        for i in df_row.values.tolist()[0][2:]:
+            values.append(str(i))
+
+        self.cli_db_delete("tbl_fuel_rencana_last", "")
+        self.cli_db_insert("tbl_fuel_rencana_last", columns, values)
+        self.cli_db_update("tbl_fuel_rencana", columns, values, "date = '" + str(date) + "'")
+
+        return "OK"
+
     # --------------------------------------------------------------------------
 
     app = Flask(__name__)
+    CORS(app)
 
     @app.route("/trigger", methods=["GET"])
     def flask_index():
-        return "Hello World!"
+        result = routine.trigger_fuel()
+        return str(result)
 
     @app.route("/optimize", methods=["GET"])
     def flask_optimize():
@@ -167,7 +223,6 @@ class Routine():
         param["period"] = float(request.form["period"])
 
         result = routine.optimize_fuel(param["sfc"], param["megawatt"], param["period"])
-
         return jsonify(result)
 
     def thread_flask(self):
