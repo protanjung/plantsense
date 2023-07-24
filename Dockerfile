@@ -15,6 +15,7 @@ RUN pip install \
     psycopg2 \
     prometheus_client \
     flask \
+    flask_cors \
     pulp
 
 RUN mkdir -p /root/plantsense
