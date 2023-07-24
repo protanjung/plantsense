@@ -148,7 +148,7 @@ class Routine():
 
     # --------------------------------------------------------------------------
 
-    def optimize_fuel(self, sfc: float, megawatt: float, period: float):
+    def optimize_fuel(self, sfc, megawatt, period):
         number_of_variables = len(self.df_fuel_param)
 
         variables = [LpVariable(self.df_fuel_param["name"][i],

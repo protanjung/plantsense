@@ -144,7 +144,9 @@ class InterfaceDatabase():
         tbl_inference_output_names = [
             "id",
             "timestamp_local",
-            "value",
+            "flame_out",
+            "gagal_naik",
+            "trip",
             "cv174_sv",
             "cv174_fb",
             "cv165_sv",
@@ -168,8 +170,9 @@ class InterfaceDatabase():
         tbl_inference_output_parameters = [
             "SERIAL NOT NULL PRIMARY KEY",
             "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP",
-            "VARCHAR NOT NULL",
-            "FLOAT NOT NULL",
+            "INT NOT NULL",
+            "INT NOT NULL",
+            "INT NOT NULL",
             "FLOAT NOT NULL",
             "FLOAT NOT NULL",
             "FLOAT NOT NULL",
