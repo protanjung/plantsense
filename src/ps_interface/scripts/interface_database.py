@@ -278,7 +278,7 @@ class InterfaceDatabase():
         self.myDatabase.commit()
         self.mutex_db.release()
 
-        if len(columns) != len(response[0]):
+        if columns == ["*"]:
             sql = "SELECT column_name FROM information_schema.columns WHERE table_schema = '" + table_schema + "' AND table_name = '" + table_name + "'"
             self.mutex_db.acquire()
             self.myCursor.execute(sql)
