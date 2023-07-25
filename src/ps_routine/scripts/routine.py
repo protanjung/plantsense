@@ -183,7 +183,7 @@ class Routine():
         # ----------
 
         if len(df_row) != 1:
-            return "ERROR"
+            return {"status": -1, "message": "Data tidak ditemukan"}
 
         # ----------
 
@@ -203,7 +203,7 @@ class Routine():
         self.cli_db_insert("tbl_fuel_rencana_last", columns, values)
         self.cli_db_update("tbl_fuel_rencana", columns, values, "date = '" + str(date) + "'")
 
-        return "OK"
+        return {"status": 0, "message": "Berhasil"}
 
     # --------------------------------------------------------------------------
 
