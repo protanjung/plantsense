@@ -213,7 +213,7 @@ class Routine():
     @app.route("/trigger", methods=["GET"])
     def flask_index():
         result = routine.trigger_fuel()
-        return str(result)
+        return jsonify(result)
 
     @app.route("/optimize", methods=["GET"])
     def flask_optimize():
