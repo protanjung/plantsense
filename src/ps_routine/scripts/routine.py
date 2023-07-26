@@ -36,8 +36,8 @@ class Routine():
         self.cli_db_upsert = rospy.ServiceProxy("db_upsert", db_upsert)
         self.cli_db_delete = rospy.ServiceProxy("db_delete", db_delete)
 
-        self.isFirst1Min = True
-        self.lastMinute = 0
+        self.isFirst1Minute = True
+        self.last1Minute = 0
 
         self.df_opcs_pool = pd.DataFrame(columns=["name", "value", "timestamp", "timestamp_local"])
         self.df_fuel_param = pd.DataFrame(columns=["name", "min_volume", "max_volume", "price"])
@@ -96,10 +96,10 @@ class Routine():
         if time.localtime().tm_sec != 0:
             return
 
-        if self.lastMinute == time.localtime().tm_min:
+        if self.last1Minute == time.localtime().tm_min:
             return
 
-        self.lastMinute = time.localtime().tm_min
+        self.last1Minute = time.localtime().tm_min
 
         # ----------
 
