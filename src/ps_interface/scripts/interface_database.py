@@ -161,11 +161,7 @@ class InterfaceDatabase():
             "fuel_oil_flow",
             "comb_shell_press",
             "bp_avg_temp",
-            "rulebased0",
-            "rulebased1",
-            "rulebased2",
-            "rulebased3",
-            "rulebased4"
+            "log"
         ]
         tbl_inference_output_parameters = [
             "SERIAL NOT NULL PRIMARY KEY",
@@ -187,11 +183,7 @@ class InterfaceDatabase():
             "FLOAT NOT NULL",
             "FLOAT NOT NULL",
             "FLOAT NOT NULL",
-            "VARCHAR NOT NULL",
-            "VARCHAR NOT NULL",
-            "VARCHAR NOT NULL",
-            "VARCHAR NOT NULL",
-            "VARCHAR NOT NULL",
+            "VARCHAR NOT NULL"
         ]
         self.db_create_table(self.db_schema, "tbl_inference_output", tbl_inference_output_names, tbl_inference_output_parameters)
         self.db_create_table(self.db_schema, "tbl_inference_output_last1800sec", tbl_inference_output_names, tbl_inference_output_parameters)
