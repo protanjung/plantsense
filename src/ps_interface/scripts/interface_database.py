@@ -79,6 +79,7 @@ class InterfaceDatabase():
     # --------------------------------------------------------------------------
 
     def interface_database_init(self):
+        self.mutex_db.acquire()
         self.myDatabase = psycopg2.connect(
             host=self.db_host,
             port=self.db_port,
@@ -87,6 +88,7 @@ class InterfaceDatabase():
             database=self.db_database
         )
         self.myCursor = self.myDatabase.cursor()
+        self.mutex_db.release()
 
         # ==============================
         # Parameter
