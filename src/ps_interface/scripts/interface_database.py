@@ -46,34 +46,43 @@ class InterfaceDatabase():
     # --------------------------------------------------------------------------
 
     def cllbck_srv_db_insert(self, req):
-        self.db_insert(self.db_schema, req.table_name, req.columns, req.values)
-
         res = db_insertResponse()
+        try:
+            self.db_insert(self.db_schema, req.table_name, req.columns, req.values)
+        except BaseException as e:
+            rospy.logerr("db_insert: " + str(e))
         return res
 
     def cllbck_srv_db_select(self, req):
-        response = self.db_select(self.db_schema, req.table_name, req.columns, req.where)
-
         res = db_selectResponse()
-        res.response = response
+        try:
+            res.response = self.db_select(self.db_schema, req.table_name, req.columns, req.where)
+        except BaseException as e:
+            rospy.logerr("db_select: " + str(e))
         return res
 
     def cllbck_srv_db_update(self, req):
-        self.db_update(self.db_schema, req.table_name, req.columns, req.values, req.where)
-
         res = db_updateResponse()
+        try:
+            self.db_update(self.db_schema, req.table_name, req.columns, req.values, req.where)
+        except BaseException as e:
+            rospy.logerr("db_update: " + str(e))
         return res
 
     def cllbck_srv_db_upsert(self, req):
-        self.db_upsert(self.db_schema, req.table_name, req.columns, req.values, req.primary_key)
-
         res = db_upsertResponse()
+        try:
+            self.db_upsert(self.db_schema, req.table_name, req.columns, req.values, req.primary_key)
+        except BaseException as e:
+            rospy.logerr("db_upsert: " + str(e))
         return res
 
     def cllbck_srv_db_delete(self, req):
-        self.db_delete(self.db_schema, req.table_name, req.where)
-
         res = db_deleteResponse()
+        try:
+            self.db_delete(self.db_schema, req.table_name, req.where)
+        except BaseException as e:
+            rospy.logerr("db_delete: " + str(e))
         return res
 
     # --------------------------------------------------------------------------
