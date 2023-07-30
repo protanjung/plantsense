@@ -215,6 +215,16 @@ class InterfaceDatabase():
         self.db_create_table(self.db_schema, "tbl_eval_kebocoran_feed_water_last1800sec", tbl_eval_kebocoran_feed_water_names, tbl_eval_kebocoran_feed_water_parameters)
         self.db_create_table(self.db_schema, "tbl_eval_kebocoran_feed_water_last", tbl_eval_kebocoran_feed_water_names[2:], tbl_eval_kebocoran_feed_water_parameters[2:])
 
+        # ==============================
+        # Eval Kebocoran Feed Water
+        # ==============================
+
+        tbl_eval_kebocoran_natrium_names = ["id", "timestamp_local", "value"]
+        tbl_eval_kebocoran_natrium_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "INT NOT NULL"]
+        self.db_create_table(self.db_schema, "tbl_eval_kebocoran_natrium", tbl_eval_kebocoran_natrium_names, tbl_eval_kebocoran_natrium_parameters)
+        self.db_create_table(self.db_schema, "tbl_eval_kebocoran_natrium_last1800sec", tbl_eval_kebocoran_natrium_names, tbl_eval_kebocoran_natrium_parameters)
+        self.db_create_table(self.db_schema, "tbl_eval_kebocoran_natrium_last", tbl_eval_kebocoran_natrium_names[2:], tbl_eval_kebocoran_natrium_parameters[2:])
+
         return 0
 
     # --------------------------------------------------------------------------
