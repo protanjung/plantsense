@@ -54,12 +54,12 @@ class Routine():
     # --------------------------------------------------------------------------
 
     def cllbck_tim_1hz(self, event):
+        self.cli_db_delete("tbl_data_last60sec", "timestamp_local < now() - interval '60 second'")
+        self.cli_db_delete("tbl_data_last1800sec", "timestamp_local < now() - interval '1800 second'")
         for opc in self.df_opcs_pool.itertuples():
             self.cli_db_insert("tbl_data", ["name", "value", "timestamp"], [opc.name, str(opc.value), opc.timestamp])
             self.cli_db_insert("tbl_data_last60sec", ["name", "value", "timestamp"], [opc.name, str(opc.value), opc.timestamp])
             self.cli_db_insert("tbl_data_last1800sec", ["name", "value", "timestamp"], [opc.name, str(opc.value), opc.timestamp])
-        self.cli_db_delete("tbl_data_last60sec", "timestamp_local < now() - interval '60 second'")
-        self.cli_db_delete("tbl_data_last1800sec", "timestamp_local < now() - interval '1800 second'")
 
         # ==============================
 
@@ -110,6 +110,8 @@ class Routine():
 
         # ----------
 
+        self.cli_db_delete("tbl_fuel_realisasi", "")
+        self.cli_db_insert("tbl_fuel_realisasi_last", ["sfc", "mw", "result"], [str(self.fuel_sfc), str(self.megawatt_from_tag_manual), str(self.result_from_tag_manual)])
         self.cli_db_insert("tbl_fuel_realisasi", ["sfc", "mw", "result"], [str(self.fuel_sfc), str(self.megawatt_from_tag_manual), str(self.result_from_tag_manual)])
 
     # --------------------------------------------------------------------------

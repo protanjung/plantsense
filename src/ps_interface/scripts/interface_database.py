@@ -147,6 +147,7 @@ class InterfaceDatabase():
         tbl_fuel_realisasi_names = ["id", "timestamp_local", "sfc", "mw", "result"]
         tbl_fuel_realisasi_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "FLOAT NOT NULL", "FLOAT NOT NULL", "VARCHAR NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_fuel_realisasi", tbl_fuel_realisasi_names, tbl_fuel_realisasi_parameters)
+        self.db_create_table(self.db_schema, "tbl_fuel_realisasi_last", tbl_fuel_realisasi_names[2:], tbl_fuel_realisasi_parameters[2:])
 
         # ==============================
         # Inference
@@ -199,6 +200,20 @@ class InterfaceDatabase():
         self.db_create_table(self.db_schema, "tbl_inference_output", tbl_inference_output_names, tbl_inference_output_parameters)
         self.db_create_table(self.db_schema, "tbl_inference_output_last1800sec", tbl_inference_output_names, tbl_inference_output_parameters)
         self.db_create_table(self.db_schema, "tbl_inference_output_last", tbl_inference_output_names[2:], tbl_inference_output_parameters[2:])
+
+        # ==============================
+        # Eval Kebocoran Feed Water
+        # ==============================
+
+        tbl_eval_kebocoran_feed_water_names = ["id", "timestamp_local",
+                                               "m11_lp", "m11_hp", "m12_lp", "m12_hp", "m13_lp", "m13_hp",
+                                               "leak11_lp", "leak11_hp", "leak12_lp", "leak12_hp", "leak13_lp", "leak13_hp"]
+        tbl_eval_kebocoran_feed_water_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP",
+                                                    "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL",
+                                                    "INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL"]
+        self.db_create_table(self.db_schema, "tbl_eval_kebocoran_feed_water", tbl_eval_kebocoran_feed_water_names, tbl_eval_kebocoran_feed_water_parameters)
+        self.db_create_table(self.db_schema, "tbl_eval_kebocoran_feed_water_last1800sec", tbl_eval_kebocoran_feed_water_names, tbl_eval_kebocoran_feed_water_parameters)
+        self.db_create_table(self.db_schema, "tbl_eval_kebocoran_feed_water_last", tbl_eval_kebocoran_feed_water_names[2:], tbl_eval_kebocoran_feed_water_parameters[2:])
 
         return 0
 
