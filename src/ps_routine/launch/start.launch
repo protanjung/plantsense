@@ -17,4 +17,5 @@
     <node name="interface_database" pkg="ps_interface" type="interface_database.py" output="screen" respawn="true" />
     <node name="interface_gateway" pkg="ps_interface" type="interface_gateway.py" output="screen" respawn="true" />
     <node name="routine" pkg="ps_routine" type="routine.py" output="screen" respawn="true" />
+    <node name="evaluation" pkg="ps_routine" type="evaluation.py" output="screen" respawn="true" />
 </launch>

@@ -31,6 +31,16 @@ class Evaluation:
     # --------------------------------------------------------------------------
 
     def cllbck_tim_2hz(self, event):
+        if time.localtime().tm_sec % 10 != 0:
+            return
+
+        if self.last10Second == time.localtime().tm_sec:
+            return
+
+        self.last10Second = time.localtime().tm_sec
+
+        # ----------
+
         self.kebocoran_feed_water()
 
     # --------------------------------------------------------------------------
@@ -42,7 +52,7 @@ class Evaluation:
 
     # --------------------------------------------------------------------------
 
-    def get_raw_data(self, name, window, period):
+    def get_raw_data_window(self, name, window, period):
         '''
         Get raw data from database
         :param name: list of OPC tags
@@ -167,12 +177,6 @@ class Evaluation:
     # --------------------------------------------------------------------------
 
     def kebocoran_feed_water(self):
-        print("+============================+")
-        print("|    kebocoran_feed_water    |")
-        print("+============================+")
-
-        # ==============================
-
         tag_damper_full_open = [["P.B11GTHRSG.H1DI00068"],
                                 ["P.B12GTHRSG.H2DI00068"],
                                 ["P.B13GTHRSG.H3DI00068"]]
@@ -185,29 +189,15 @@ class Evaluation:
 
         try:
             for i in range(3):
-                raw_damper_full_open = self.get_raw_data(tag_damper_full_open[i], 10, 10)
-                raw_damper_full_close = self.get_raw_data(tag_damper_full_close[i], 10, 10)
-                # print("raw_damper_full_open" + str(i))
-                # print(raw_damper_full_open.to_markdown())
-                # print("raw_damper_full_close" + str(i))
-                # print(raw_damper_full_close.to_markdown())
+                raw_damper_full_open = self.get_raw_data_window(tag_damper_full_open[i], 10, 10)
+                raw_damper_full_close = self.get_raw_data_window(tag_damper_full_close[i], 10, 10)
                 average_damper_full_open = self.get_average_per_column(raw_damper_full_open).iloc[0, 0]
                 average_damper_full_close = self.get_average_per_column(raw_damper_full_close).iloc[0, 0]
-                # print("average_damper_full_open" + str(i))
-                # print(average_damper_full_open)
-                # print("average_damper_full_close" + str(i))
-                # print(average_damper_full_close)
                 isopen_damper += [True if average_damper_full_open > 0.99 else False]
                 isclose_damper += [True if average_damper_full_close > 0.99 else False]
         except BaseException as e:
-            isopen_isclose_damper_ok = False
             rospy.logerr("Error: " + str(e))
             return
-
-        print("isopen_damper")
-        print(isopen_damper)
-        print("isclose_damper")
-        print(isclose_damper)
 
         # ==============================
 
@@ -223,34 +213,15 @@ class Evaluation:
 
         try:
             for i in range(3):
-                if not isclose_damper[i]:
-                    isclose_cso_lcv_lp += [False]
-                    isclose_cso_lcv_hp += [False]
-                    continue
-
-                raw_cso_lcv_lp = self.get_raw_data(tag_cso_lcv_lp[i], 10, 10)
-                raw_cso_lcv_hp = self.get_raw_data(tag_cso_lcv_hp[i], 10, 10)
-                # print("raw_cso_lcv_lp" + str(i))
-                # print(raw_cso_lcv_lp.to_markdown())
-                # print("raw_cso_lcv_hp" + str(i))
-                # print(raw_cso_lcv_hp.to_markdown())
+                raw_cso_lcv_lp = self.get_raw_data_window(tag_cso_lcv_lp[i], 10, 10)
+                raw_cso_lcv_hp = self.get_raw_data_window(tag_cso_lcv_hp[i], 10, 10)
                 average_cso_lcv_lp = self.get_average_per_column(raw_cso_lcv_lp).iloc[0, 0]
                 average_cso_lcv_hp = self.get_average_per_column(raw_cso_lcv_hp).iloc[0, 0]
-                # print("average_cso_lcv_lp" + str(i))
-                # print(average_cso_lcv_lp)
-                # print("average_cso_lcv_hp" + str(i))
-                # print(average_cso_lcv_hp)
-
                 isclose_cso_lcv_lp += [True if average_cso_lcv_lp > 99.99 else False]
                 isclose_cso_lcv_hp += [True if average_cso_lcv_hp > 99.99 else False]
         except BaseException as e:
             rospy.logerr("Error: " + str(e))
             return
-
-        print("isclose_cso_lcv_lp")
-        print(isclose_cso_lcv_lp)
-        print("isclose_cso_lcv_hp")
-        print(isclose_cso_lcv_hp)
 
         # ==============================
 
@@ -261,45 +232,24 @@ class Evaluation:
                         ["P.B12GTHRSG.H2LA00277", "P.B12GTHRSG.H2LA00278", "P.B12GTHRSG.H2LA00279"],
                         ["P.B13GTHRSG.H3LA00277", "P.B13GTHRSG.H3LA00278", "P.B13GTHRSG.H3LA00279"]]
 
+        m_c_lp_level = []
+        m_c_hp_level = []
         trend_lp_level = []
         trend_hp_level = []
 
         try:
             for i in range(3):
-                if not isclose_damper[i]:
-                    trend_lp_level += [0]
-                    trend_hp_level += [0]
-                    continue
-
-                raw_lp_level = self.get_raw_data(tag_lp_level[i], 600, 10)
-                raw_hp_level = self.get_raw_data(tag_hp_level[i], 600, 10)
-                # print("raw_lp_level" + str(i))
-                # print(raw_lp_level.to_markdown())
-                # print("raw_hp_level" + str(i))
-                # print(raw_hp_level.to_markdown())
+                raw_lp_level = self.get_raw_data_window(tag_lp_level[i], 600, 10)
+                raw_hp_level = self.get_raw_data_window(tag_hp_level[i], 600, 10)
                 median_lp_level = self.get_median_per_row(raw_lp_level)
                 median_hp_level = self.get_median_per_row(raw_hp_level)
-                # print("median_lp_level" + str(i))
-                # print(median_lp_level.to_markdown())
-                # print("median_hp_level" + str(i))
-                # print(median_hp_level.to_markdown())
-                m_c_lp_level = self.linear_regression(median_lp_level)
-                m_c_hp_level = self.linear_regression(median_hp_level)
-                # print("m_c_lp_level" + str(i))
-                # print(m_c_lp_level)
-                # print("m_c_hp_level" + str(i))
-                # print(m_c_hp_level)
-
-                trend_lp_level += [1 if m_c_lp_level[0] > 0.1 else -1 if m_c_lp_level[0] < -0.1 else 0]
-                trend_hp_level += [1 if m_c_hp_level[0] > 0.1 else -1 if m_c_hp_level[0] < -0.1 else 0]
+                m_c_lp_level += [self.linear_regression(median_lp_level)]
+                m_c_hp_level += [self.linear_regression(median_hp_level)]
+                trend_lp_level += [1 if m_c_lp_level[i][0] > 0.1 else -1 if m_c_lp_level[i][0] < -0.1 else 0]
+                trend_hp_level += [1 if m_c_hp_level[i][0] > 0.1 else -1 if m_c_hp_level[i][0] < -0.1 else 0]
         except BaseException as e:
             rospy.logerr("Error: " + str(e))
             return
-
-        print("trend_lp_level")
-        print(trend_lp_level)
-        print("trend_hp_level")
-        print(trend_hp_level)
 
         # ==============================
 
@@ -309,20 +259,39 @@ class Evaluation:
         try:
             for i in range(3):
                 if not isclose_damper[i]:
-                    isleak_lp += [False]
-                    isleak_hp += [False]
+                    isleak_lp += [0]
+                    isleak_hp += [0]
                     continue
-
-                isleak_lp += [True if trend_lp_level[i] != 0 else False]
-                isleak_hp += [True if trend_hp_level[i] != 0 else False]
+                isleak_lp += [1 if trend_lp_level[i] != 0 else 0]
+                isleak_hp += [1 if trend_hp_level[i] != 0 else 0]
         except BaseException as e:
             rospy.logerr("Error: " + str(e))
             return
 
-        print("isleak_lp")
-        print(isleak_lp)
-        print("isleak_hp")
-        print(isleak_hp)
+        # ==============================
+
+        columns = ["m11_lp", "m11_hp",
+                   "m12_lp", "m12_hp",
+                   "m13_lp", "m13_hp",
+                   "leak11_lp", "leak11_hp",
+                   "leak12_lp", "leak12_hp",
+                   "leak13_lp", "leak13_hp"]
+        values = [str(m_c_lp_level[0][0]), str(m_c_hp_level[0][0]),
+                  str(m_c_lp_level[1][0]), str(m_c_hp_level[1][0]),
+                  str(m_c_lp_level[2][0]), str(m_c_hp_level[2][0]),
+                  str(isleak_lp[0]), str(isleak_hp[0]),
+                  str(isleak_lp[1]), str(isleak_hp[1]),
+                  str(isleak_lp[2]), str(isleak_hp[2])]
+
+        try:
+            self.cli_db_delete("tbl_eval_kebocoran_feed_water_last", "")
+            self.cli_db_insert("tbl_eval_kebocoran_feed_water_last", columns, values)
+            self.cli_db_insert("tbl_eval_kebocoran_feed_water", columns, values)
+            self.cli_db_delete("tbl_eval_kebocoran_feed_water_last1800sec", "timestamp_local < now() - interval '1800 second'")
+            self.cli_db_insert("tbl_eval_kebocoran_feed_water_last1800sec", columns, values)
+        except BaseException as e:
+            rospy.logerr("Error: " + str(e))
+            return
 
 
 if __name__ == "__main__":
