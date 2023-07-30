@@ -225,10 +225,10 @@ class Evaluation:
 
         # ==============================
 
-        lp_level_uptrend_threshold = rospy.get_param("lp_level_uptrend_threshold", 0.1)
-        lp_level_downtrend_threshold = rospy.get_param("lp_level_downtrend_threshold", -0.1)
-        hp_level_uptrend_threshold = rospy.get_param("hp_level_uptrend_threshold", 0.1)
-        hp_level_downtrend_threshold = rospy.get_param("hp_level_downtrend_threshold", -0.1)
+        lp_level_uptrend_threshold = float(rospy.get_param("lp_level_uptrend_threshold", 0.1))
+        lp_level_downtrend_threshold = float(rospy.get_param("lp_level_downtrend_threshold", -0.1))
+        hp_level_uptrend_threshold = float(rospy.get_param("hp_level_uptrend_threshold", 0.1))
+        hp_level_downtrend_threshold = float(rospy.get_param("hp_level_downtrend_threshold", -0.1))
 
         tag_lp_level = [["P.B11GTHRSG.H1LA00274", "P.B11GTHRSG.H1LA00275", "P.B11GTHRSG.H1LA00276"],
                         ["P.B12GTHRSG.H2LA00274", "P.B12GTHRSG.H2LA00275", "P.B12GTHRSG.H2LA00276"],
