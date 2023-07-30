@@ -225,6 +225,11 @@ class Evaluation:
 
         # ==============================
 
+        lp_level_uptrend_threshold = rospy.get_param("lp_level_uptrend_threshold", 0.1)
+        lp_level_downtrend_threshold = rospy.get_param("lp_level_downtrend_threshold", -0.1)
+        hp_level_uptrend_threshold = rospy.get_param("hp_level_uptrend_threshold", 0.1)
+        hp_level_downtrend_threshold = rospy.get_param("hp_level_downtrend_threshold", -0.1)
+
         tag_lp_level = [["P.B11GTHRSG.H1LA00274", "P.B11GTHRSG.H1LA00275", "P.B11GTHRSG.H1LA00276"],
                         ["P.B12GTHRSG.H2LA00274", "P.B12GTHRSG.H2LA00275", "P.B12GTHRSG.H2LA00276"],
                         ["P.B13GTHRSG.H3LA00274", "P.B13GTHRSG.H3LA00275", "P.B13GTHRSG.H3LA00276"]]
@@ -245,17 +250,19 @@ class Evaluation:
                 median_hp_level = self.get_median_per_row(raw_hp_level)
                 m_c_lp_level += [self.linear_regression(median_lp_level)]
                 m_c_hp_level += [self.linear_regression(median_hp_level)]
-                trend_lp_level += [1 if m_c_lp_level[i][0] > 0.1 else -1 if m_c_lp_level[i][0] < -0.1 else 0]
-                trend_hp_level += [1 if m_c_hp_level[i][0] > 0.1 else -1 if m_c_hp_level[i][0] < -0.1 else 0]
+                trend_lp_level += [1 if m_c_lp_level[i][0] > lp_level_uptrend_threshold else -1 if m_c_lp_level[i][0] < lp_level_downtrend_threshold else 0]
+                trend_hp_level += [1 if m_c_hp_level[i][0] > hp_level_uptrend_threshold else -1 if m_c_hp_level[i][0] < hp_level_downtrend_threshold else 0]
         except BaseException as e:
             rospy.logerr("Error: " + str(e))
             return
 
         # ==============================
 
-        isclose_cso_lcv_lp = [1, 1, 1]
-        isclose_cso_lcv_hp = [1, 1, 1]
-        isclose_damper = [1, 1, 1]
+        # ! FOR TESTING ONLY
+        # isclose_cso_lcv_lp = [1, 1, 1]
+        # isclose_cso_lcv_hp = [1, 1, 1]
+        # isclose_damper = [1, 1, 1]
+        # ! FOR TESTING ONLY
 
         # ==============================
 
