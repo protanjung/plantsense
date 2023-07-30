@@ -217,8 +217,8 @@ class Evaluation:
                 raw_cso_lcv_hp = self.get_raw_data_window(tag_cso_lcv_hp[i], 10, 10)
                 average_cso_lcv_lp = self.get_average_per_column(raw_cso_lcv_lp).iloc[0, 0]
                 average_cso_lcv_hp = self.get_average_per_column(raw_cso_lcv_hp).iloc[0, 0]
-                isclose_cso_lcv_lp += [True if average_cso_lcv_lp > 99.99 else False]
-                isclose_cso_lcv_hp += [True if average_cso_lcv_hp > 99.99 else False]
+                isclose_cso_lcv_lp += [1 if average_cso_lcv_lp > 99.99 else 0]
+                isclose_cso_lcv_hp += [1 if average_cso_lcv_hp > 99.99 else 0]
         except BaseException as e:
             rospy.logerr("Error: " + str(e))
             return
@@ -253,6 +253,12 @@ class Evaluation:
 
         # ==============================
 
+        isclose_cso_lcv_lp = [1, 1, 1]
+        isclose_cso_lcv_hp = [1, 1, 1]
+        isclose_damper = [1, 1, 1]
+
+        # ==============================
+
         isleak_lp = []
         isleak_hp = []
 
@@ -262,8 +268,8 @@ class Evaluation:
                     isleak_lp += [0]
                     isleak_hp += [0]
                     continue
-                isleak_lp += [1 if trend_lp_level[i] != 0 else 0]
-                isleak_hp += [1 if trend_hp_level[i] != 0 else 0]
+                isleak_lp += [1 if trend_lp_level[i] != 0 and isclose_cso_lcv_lp[i] == 1 else 0]
+                isleak_hp += [1 if trend_hp_level[i] != 0 and isclose_cso_lcv_hp[i] == 1 else 0]
         except BaseException as e:
             rospy.logerr("Error: " + str(e))
             return
