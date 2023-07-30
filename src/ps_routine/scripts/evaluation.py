@@ -300,8 +300,6 @@ class Evaluation:
             self.cli_db_delete("tbl_eval_kebocoran_feed_water_last", "")
             self.cli_db_insert("tbl_eval_kebocoran_feed_water_last", columns, values)
             self.cli_db_insert("tbl_eval_kebocoran_feed_water", columns, values)
-            self.cli_db_delete("tbl_eval_kebocoran_feed_water_last1800sec", "timestamp_local < now() - interval '1800 second'")
-            self.cli_db_insert("tbl_eval_kebocoran_feed_water_last1800sec", columns, values)
         except BaseException as e:
             rospy.logerr("Error: " + str(e))
             return
