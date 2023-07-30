@@ -1,15 +1,12 @@
 FROM ros:noetic-ros-base
 
-RUN sudo apt update \
-    && sudo apt install -y \
-    wget \
+RUN apt update \
+    && apt install -y \
     libpq-dev \
-    && sudo rm -rf /var/lib/apt/lists/*
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN wget https://bootstrap.pypa.io/get-pip.py \
-    && python3 get-pip.py
-
-RUN pip install \
+RUN pip3 install \
     requests \
     pandas \
     psycopg2 \
