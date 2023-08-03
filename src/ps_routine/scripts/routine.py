@@ -103,14 +103,14 @@ class Routine():
 
         # ----------
 
-        self.result_from_value_manual = json.dumps(self.optimize_fuel(self.fuel_sfc, self.megawatt_from_value_manual, 1 / 1440), indent=2)
-        self.result_from_tag_manual = json.dumps(self.optimize_fuel(self.fuel_sfc, self.megawatt_from_tag_manual, 1 / 1440), indent=2)
+        self.result_from_value_manual = json.dumps(self.optimize_fuel(self.fuel_sfc, self.megawatt_from_value_manual), indent=2)
+        self.result_from_tag_manual = json.dumps(self.optimize_fuel(self.fuel_sfc, self.megawatt_from_tag_manual), indent=2)
         self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_result_from_value_manual", str(self.result_from_value_manual)], "name")
         self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_result_from_tag_manual", str(self.result_from_tag_manual)], "name")
 
         # ----------
 
-        self.cli_db_delete("tbl_fuel_realisasi", "")
+        self.cli_db_delete("tbl_fuel_realisasi_last", "")
         self.cli_db_insert("tbl_fuel_realisasi_last", ["sfc", "mw", "result"], [str(self.fuel_sfc), str(self.megawatt_from_tag_manual), str(self.result_from_tag_manual)])
         self.cli_db_insert("tbl_fuel_realisasi", ["sfc", "mw", "result"], [str(self.fuel_sfc), str(self.megawatt_from_tag_manual), str(self.result_from_tag_manual)])
 
@@ -150,16 +150,16 @@ class Routine():
 
     # --------------------------------------------------------------------------
 
-    def optimize_fuel(self, sfc, megawatt, period):
+    def optimize_fuel(self, sfc, megawatt):
         number_of_variables = len(self.df_fuel_param)
 
         variables = [LpVariable(self.df_fuel_param["name"][i],
-                                self.df_fuel_param["min_volume"][i] * period / 24,
-                                self.df_fuel_param["max_volume"][i] * period / 24) for i in range(number_of_variables)]
+                                self.df_fuel_param["min_volume"][i],
+                                self.df_fuel_param["max_volume"][i]) for i in range(number_of_variables)]
 
         problem = LpProblem("Optimization", LpMinimize)
         problem += lpSum([self.df_fuel_param["price"][i] * variables[i] for i in range(number_of_variables)])
-        problem += lpSum([variables[i] for i in range(number_of_variables)]) == float(sfc) * float(megawatt) * float(period)
+        problem += lpSum([variables[i] for i in range(number_of_variables)]) == float(sfc) * float(megawatt) * 24.0 * 1000.0
 
         status = problem.solve(PULP_CBC_CMD(msg=0))
 
@@ -168,7 +168,6 @@ class Routine():
         result["sfc"] = float(sfc)
         result["megawatt"] = float(megawatt)
         result["volume"] = float(sfc) * float(megawatt) * 24.0
-        result["period"] = float(period)
         result["cost"] = problem.objective.value()
         result["purchase"] = {}
         for i in range(number_of_variables):
@@ -178,21 +177,26 @@ class Routine():
 
     def trigger_fuel(self):
         date = time.strftime("%Y-%m-%d", time.localtime())
+        sfc = self.fuel_sfc
+
+        # ----------
 
         json_row = self.cli_db_select("tbl_fuel_rencana", ["*"], "date = '" + str(date) + "'")
         df_row = pd.read_json(json_row.response, orient="split")
 
         # ----------
 
-        if len(df_row) != 1:
+        if df_row.shape[0] == 0:
             return {"status": -1, "message": "Data tidak ditemukan"}
+        if df_row.shape[0] > 1:
+            return {"status": -1, "message": "Data yang ditemukan lebih dari satu"}
 
         # ----------
 
-        df_row["sfc"][0] = self.fuel_sfc
-        df_row["value_total"][0] = json.dumps(self.optimize_fuel(df_row["sfc"][0], df_row["mw_total"][0], 24))
+        df_row.loc[0, "date"] = str(date)
+        df_row.loc[0, "sfc"] = str(sfc)
         for i in range(48):
-            df_row["value" + str(i)][0] = json.dumps(self.optimize_fuel(df_row["sfc"][0], df_row["mw" + str(i)][0], 0.5))
+            df_row.loc[0, "value" + str(i)] = json.dumps(self.optimize_fuel(sfc, df_row.loc[0, "mw" + str(i)]), indent=2)
 
         columns = []
         for i in df_row.columns.tolist()[2:]:
@@ -200,6 +204,8 @@ class Routine():
         values = []
         for i in df_row.values.tolist()[0][2:]:
             values.append(str(i))
+
+        # ----------
 
         self.cli_db_delete("tbl_fuel_rencana_last", "")
         self.cli_db_insert("tbl_fuel_rencana_last", columns, values)
@@ -222,9 +228,8 @@ class Routine():
         param = {}
         param["sfc"] = float(request.form["sfc"])
         param["megawatt"] = float(request.form["megawatt"])
-        param["period"] = float(request.form["period"])
 
-        result = routine.optimize_fuel(param["sfc"], param["megawatt"], param["period"])
+        result = routine.optimize_fuel(param["sfc"], param["megawatt"])
         return jsonify(result)
 
     def thread_flask(self):
