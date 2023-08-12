@@ -9,6 +9,7 @@ from ps_interface.srv import db_delete, db_deleteResponse
 import time
 import pandas as pd
 import numpy as np
+import pyromat as pm
 
 
 class Evaluation:
@@ -24,6 +25,8 @@ class Evaluation:
 
         self.isFirst10Second = True
         self.last10Second = 0
+
+        self.H2O = pm.get('mp.H2O')
 
         if self.evaluation_init() == -1:
             rospy.signal_shutdown("")
@@ -303,6 +306,37 @@ class Evaluation:
         except BaseException as e:
             rospy.logerr("Error: " + str(e))
             return
+
+    # --------------------------------------------------------------------------
+
+    def get_enthalpy(self, temperature, pressure):
+        '''
+        Calculates the enthalpy of water vapor at a given temperature and pressure.
+        :param temperature: Temperature in Celcius
+        :param pressure: Pressure in kg/cm2
+        :return: Enthalpy in kJ/kg
+        '''
+        temperature_ = temperature + 273
+        pressure_ = pressure * 0.980665
+
+        return self.H2O.h(T=temperature_, p=pressure_)[0]
+
+    def get_heat_rate(self, lp_steam_enthalpy, hp_steam_enthalpy, gland_steam_enthalpy, lp_steam_flow, hp_steam_flow, mw):
+        '''
+        Calculates the heat rate of a turbine.
+        :param lp_steam_enthalpy: Enthalpy of low pressure steam in kJ/kg
+        :param hp_steam_enthalpy: Enthalpy of high pressure steam in kJ/kg
+        :param gland_steam_enthalpy: Enthalpy of gland steam in kJ/kg
+        :param lp_steam_flow: Flow of low pressure steam in t/h
+        :param hp_steam_flow: Flow of high pressure steam in t/h
+        :param mw: Power output in MW
+        :return: Heat rate in kcal/kWh
+        '''
+        A = hp_steam_flow * 1000 * (hp_steam_enthalpy - gland_steam_enthalpy)
+        B = lp_steam_flow * 1000 * (lp_steam_enthalpy - gland_steam_enthalpy)
+        C = mw
+
+        return (A + B) / C / 4186.8
 
 
 if __name__ == "__main__":
