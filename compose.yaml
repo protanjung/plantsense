@@ -58,6 +58,7 @@ services:
       - grafana-var-lib-grafana:/var/lib/grafana
       - grafana-etc-grafana:/etc/grafana
       - grafana-var-log-grafana:/var/log/grafana
+      - ${HOME}/docker-data/grafana_bg:/usr/share/grafana/public/img/bg # Addition
     ports:
       - 3000:3000
 
@@ -89,6 +90,8 @@ services:
     restart: always
     environment:
       TZ: "Asia/Jakarta"
+    volumes:
+      - ${HOME}/docker-data/ai_reports:/server/reports # Addition
 
 volumes:
   portainer-data:

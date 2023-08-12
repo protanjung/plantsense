@@ -16,7 +16,7 @@ import pyromat as pm
 class Evaluation:
     def __init__(self):
         # =====Timer
-        self.tim_2hz = rospy.Timer(rospy.Duration(2.0), self.cllbck_tim_2hz)
+        self.tim_2hz = rospy.Timer(rospy.Duration(0.5), self.cllbck_tim_2hz)
         # =====ServiceClient
         self.cli_db_insert = rospy.ServiceProxy("db_insert", db_insert)
         self.cli_db_select = rospy.ServiceProxy("db_select", db_select)
