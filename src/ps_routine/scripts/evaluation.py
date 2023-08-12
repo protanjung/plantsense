@@ -34,24 +34,19 @@ class Evaluation:
 
     # --------------------------------------------------------------------------
 
-    # def cllbck_tim_2hz(self, event):
-    #     if time.localtime().tm_sec % 10 != 0:
-    #         return
-
-    #     if self.last10Second == time.localtime().tm_sec:
-    #         return
-
-    #     self.last10Second = time.localtime().tm_sec
-
-    #     # ----------
-
-    #     self.kebocoran_feed_water()
-
     def cllbck_tim_2hz(self, event):
-        rospy.loginfo("Test")
+        if time.localtime().tm_sec % 10 != 0:
+            return
+
+        if self.last10Second == time.localtime().tm_sec:
+            return
+
+        self.last10Second = time.localtime().tm_sec
+
+        # ----------
 
         self.kebocoran_feed_water()
-        # self.monitor_cwp_heatrate()
+        self.steam_turbine_heat_rate()
 
     # --------------------------------------------------------------------------
 
@@ -232,12 +227,10 @@ class Evaluation:
 
         try:
             for i in range(3):
-                raw_damper_full_open = self.get_raw_data_window(tag_damper_full_open[i], 10, 10)
-                raw_damper_full_close = self.get_raw_data_window(tag_damper_full_close[i], 10, 10)
-                average_damper_full_open = self.get_average_per_column(raw_damper_full_open).iloc[0, 0]
-                average_damper_full_close = self.get_average_per_column(raw_damper_full_close).iloc[0, 0]
-                isopen_damper += [True if average_damper_full_open > 0.99 else False]
-                isclose_damper += [True if average_damper_full_close > 0.99 else False]
+                raw_damper_full_open = self.get_raw_data_last(tag_damper_full_open[i]).iloc[0, 0]
+                raw_damper_full_close = self.get_raw_data_last(tag_damper_full_close[i]).iloc[0, 0]
+                isopen_damper += [1 if raw_damper_full_open > 0.5 else 0]
+                isclose_damper += [1 if raw_damper_full_close > 0.5 else 0]
         except BaseException as e:
             rospy.logerr("Error: " + str(e))
             return
@@ -256,12 +249,10 @@ class Evaluation:
 
         try:
             for i in range(3):
-                raw_cso_lcv_lp = self.get_raw_data_window(tag_cso_lcv_lp[i], 10, 10)
-                raw_cso_lcv_hp = self.get_raw_data_window(tag_cso_lcv_hp[i], 10, 10)
-                average_cso_lcv_lp = self.get_average_per_column(raw_cso_lcv_lp).iloc[0, 0]
-                average_cso_lcv_hp = self.get_average_per_column(raw_cso_lcv_hp).iloc[0, 0]
-                isclose_cso_lcv_lp += [1 if average_cso_lcv_lp > 99.99 else 0]
-                isclose_cso_lcv_hp += [1 if average_cso_lcv_hp > 99.99 else 0]
+                raw_cso_lcv_lp = self.get_raw_data_last(tag_cso_lcv_lp[i]).iloc[0, 0]
+                raw_cso_lcv_hp = self.get_raw_data_last(tag_cso_lcv_hp[i]).iloc[0, 0]
+                isclose_cso_lcv_lp += [1 if raw_cso_lcv_lp > 99.99 else 0]
+                isclose_cso_lcv_hp += [1 if raw_cso_lcv_hp > 99.99 else 0]
         except BaseException as e:
             rospy.logerr("Error: " + str(e))
             return
@@ -312,17 +303,18 @@ class Evaluation:
         isleak_lp = []
         isleak_hp = []
 
-        try:
-            for i in range(3):
-                if not isclose_damper[i]:
-                    isleak_lp += [0]
-                    isleak_hp += [0]
-                    continue
-                isleak_lp += [1 if trend_lp_level[i] != 0 and isclose_cso_lcv_lp[i] == 1 else 0]
-                isleak_hp += [1 if trend_hp_level[i] != 0 and isclose_cso_lcv_hp[i] == 1 else 0]
-        except BaseException as e:
-            rospy.logerr("Error: " + str(e))
-            return
+        for i in range(3):
+            # If damper is not fully closed,
+            # then there is no leak
+            if isclose_damper[i] != 1:
+                isleak_lp += [0]
+                isleak_hp += [0]
+                continue
+            # If damper is fully closed,
+            # then there is leak if trend is not 0 and cso lcv is closed
+            isleak_lp += [1 if trend_lp_level[i] != 0 and isclose_cso_lcv_lp[i] == 1 else 0]
+            isleak_hp += [1 if trend_hp_level[i] != 0 and isclose_cso_lcv_hp[i] == 1 else 0]
+            continue
 
         # ==============================
 
@@ -347,7 +339,7 @@ class Evaluation:
             rospy.logerr("Error: " + str(e))
             return
 
-    def monitor_cwp_heatrate(self):
+    def steam_turbine_heat_rate(self):
         tag_lp_temperature = [["P.B1PLANT.STAI00014"],
                               ["P.B2PLANT.STAI00014"],
                               ["P.B3PLANT.STAI00014"]]
@@ -447,8 +439,6 @@ class Evaluation:
         lp_enthalpy = [self.get_enthalpy(lp_temperature[i], lp_pressure[i]) for i in range(3)]
         hp_enthalpy = [self.get_enthalpy(hp_temperature[i], hp_pressure[i]) for i in range(3)]
         gland_enthalpy = [self.get_enthalpy(gland_temperature[i], gland_pressure[i]) for i in range(3)]
-
-        # ==============================
 
         st_heat_rate_blok123 = [self.get_heat_rate(lp_enthalpy[i], hp_enthalpy[i], gland_enthalpy[i], lp_steam_flow[i], hp_steam_flow[i], mw[i]) for i in range(3)]
         st_heat_rate_total = sum(st_heat_rate_blok123)
