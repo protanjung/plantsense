@@ -13,7 +13,8 @@ RUN pip3 install \
     prometheus_client \
     flask \
     flask_cors \
-    pulp
+    pulp \ 
+    pyromat
 
 RUN mkdir -p /root/plantsense
 COPY ./src /root/plantsense/src

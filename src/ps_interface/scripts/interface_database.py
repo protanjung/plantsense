@@ -215,7 +215,16 @@ class InterfaceDatabase():
         self.db_create_table(self.db_schema, "tbl_eval_kebocoran_feed_water_last", tbl_eval_kebocoran_feed_water_names[2:], tbl_eval_kebocoran_feed_water_parameters[2:])
 
         # ==============================
-        # Eval Kebocoran Feed Water
+        # Eval Steam Turbine Heat Rate
+        # ==============================
+
+        tbl_eval_st_heat_rate_names = ["id", "timestamp_local", "blok1", "blok2", "blok3", "total"]
+        tbl_eval_st_heat_rate_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL"]
+        self.db_create_table(self.db_schema, "tbl_eval_st_heat_rate", tbl_eval_st_heat_rate_names, tbl_eval_st_heat_rate_parameters)
+        self.db_create_table(self.db_schema, "tbl_eval_st_heat_rate_last", tbl_eval_st_heat_rate_names[2:], tbl_eval_st_heat_rate_parameters[2:])
+
+        # ==============================
+        # Eval Kebocoran Natrium
         # ==============================
 
         tbl_eval_kebocoran_natrium_names = ["id", "timestamp_local", "value"]
