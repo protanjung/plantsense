@@ -110,6 +110,37 @@ class Evaluation:
 
         return ret_df
 
+    def get_raw_data_last(self, name):
+        '''
+        Get raw data from database
+        :param name: list of OPC tags
+        :return: pandas dataframe with timestamp as index, OPC tags as columns, and OPC values as values
+        '''
+        # Construct where clause
+        where = "name in ("
+        for i in range(len(name)):
+            where += "'" + name[i] + "'"
+            if i < len(name) - 1:
+                where += ", "
+        where += ")"
+
+        # Get data from database
+        ret_json = self.cli_db_select("tbl_data_last", ["*"], where)
+        ret_df = pd.read_json(ret_json.response, orient="split")
+
+        try:
+            # Copy data
+            temp = ret_df.copy()
+            # Pivot data to get timestamp as index, OPC tags as columns, and OPC values as values
+            temp = temp.pivot(index="timestamp", columns="name", values="value")
+            # Return data
+            ret_df = temp.copy()
+        except BaseException as e:
+            rospy.logerr("Error: " + str(e))
+            return pd.DataFrame()
+
+        return ret_df
+
     def get_median_per_row(self, df):
         '''
         Get median value per row
