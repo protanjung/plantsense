@@ -7,6 +7,7 @@ from ps_interface.srv import db_update, db_updateResponse
 from ps_interface.srv import db_upsert, db_upsertResponse
 from ps_interface.srv import db_delete, db_deleteResponse
 import time
+import json
 import pandas as pd
 import numpy as np
 import pyromat as pm
@@ -15,7 +16,7 @@ import pyromat as pm
 class Evaluation:
     def __init__(self):
         # =====Timer
-        self.tim_2hz = rospy.Timer(rospy.Duration(0.5), self.cllbck_tim_2hz)
+        self.tim_2hz = rospy.Timer(rospy.Duration(2.0), self.cllbck_tim_2hz)
         # =====ServiceClient
         self.cli_db_insert = rospy.ServiceProxy("db_insert", db_insert)
         self.cli_db_select = rospy.ServiceProxy("db_select", db_select)
@@ -33,18 +34,24 @@ class Evaluation:
 
     # --------------------------------------------------------------------------
 
+    # def cllbck_tim_2hz(self, event):
+    #     if time.localtime().tm_sec % 10 != 0:
+    #         return
+
+    #     if self.last10Second == time.localtime().tm_sec:
+    #         return
+
+    #     self.last10Second = time.localtime().tm_sec
+
+    #     # ----------
+
+    #     self.kebocoran_feed_water()
+
     def cllbck_tim_2hz(self, event):
-        if time.localtime().tm_sec % 10 != 0:
-            return
-
-        if self.last10Second == time.localtime().tm_sec:
-            return
-
-        self.last10Second = time.localtime().tm_sec
-
-        # ----------
+        rospy.loginfo("Test")
 
         self.kebocoran_feed_water()
+        # self.monitor_cwp_heatrate()
 
     # --------------------------------------------------------------------------
 
@@ -336,6 +343,131 @@ class Evaluation:
             self.cli_db_delete("tbl_eval_kebocoran_feed_water_last", "")
             self.cli_db_insert("tbl_eval_kebocoran_feed_water_last", columns, values)
             self.cli_db_insert("tbl_eval_kebocoran_feed_water", columns, values)
+        except BaseException as e:
+            rospy.logerr("Error: " + str(e))
+            return
+
+    def monitor_cwp_heatrate(self):
+        tag_lp_temperature = [["P.B1PLANT.STAI00014"],
+                              ["P.B2PLANT.STAI00014"],
+                              ["P.B3PLANT.STAI00014"]]
+        tag_lp_pressure = [["P.B1PLANT.STLA00133"],
+                           ["P.B2PLANT.STLA00133"],
+                           ["P.B3PLANT.STLA00133"]]
+        tag_hp_temperature = [["P.B1PLANT.CCAI00002"],
+                              ["P.B2PLANT.CCAI00002"],
+                              ["P.B3PLANT.CCAI00002"]]
+        tag_hp_pressure = [["P.B1PLANT.STLA00132"],
+                           ["P.B2PLANT.STLA00132"],
+                           ["P.B3PLANT.STLA00132"]]
+
+        lp_pressure = []
+        lp_temperature = []
+        hp_pressure = []
+        hp_temperature = []
+
+        try:
+            for i in range(3):
+                raw_lp_pressure = self.get_raw_data_last(tag_lp_pressure[i]).iloc[0, 0]
+                raw_lp_temperature = self.get_raw_data_last(tag_lp_temperature[i]).iloc[0, 0]
+                raw_hp_pressure = self.get_raw_data_last(tag_hp_pressure[i]).iloc[0, 0]
+                raw_hp_temperature = self.get_raw_data_last(tag_hp_temperature[i]).iloc[0, 0]
+                lp_pressure += [raw_lp_pressure]
+                lp_temperature += [raw_lp_temperature]
+                hp_pressure += [raw_hp_pressure]
+                hp_temperature += [raw_hp_temperature]
+        except BaseException as e:
+            rospy.logerr("Error: " + str(e))
+            return
+
+        # ==============================
+
+        tag_gland_temperature = [["P.B1PLANT.DALA00345"],
+                                 ["P.B2PLANT.DALA00345"],
+                                 ["P.B2PLANT.DALA00345"]]
+        tag_gland_pressure = [["P.B1PLANT.BPAI00005"],
+                              ["P.B2PLANT.BPAI00005"],
+                              ["P.B3PLANT.BPAI00005"]]
+
+        gland_temperature = []
+        gland_pressure = []
+
+        try:
+            for i in range(3):
+                raw_gland_temperature = self.get_raw_data_last(tag_gland_temperature[i]).iloc[0]
+                raw_gland_pressure = self.get_raw_data_last(tag_gland_pressure[i]).iloc[0]
+                gland_temperature += [raw_gland_temperature]
+                gland_pressure += [raw_gland_pressure]
+        except BaseException as e:
+            rospy.logerr("Error: " + str(e))
+            return
+
+        # ==============================
+
+        tag_lp_steam_flow = [["P.B11GTHRSG.H1LA00212", "P.B12GTHRSG.H2LA00212", "P.B13GTHRSG.H3LA00212"],
+                             ["P.B21GTHRSG.H1LA00212", "P.B22GTHRSG.H2LA00212", "P.B23GTHRSG.H3LA00212"],
+                             ["P.B31GTHRSG.H1LA00212", "P.B32GTHRSG.H2LA00212", "P.B33GTHRSG.H3LA00212"]]
+        tag_hp_steam_flow = [["P.B11GTHRSG.H1LA00214", "P.B12GTHRSG.H2LA00214", "P.B13GTHRSG.H3LA00214"],
+                             ["P.B21GTHRSG.H1LA00214", "P.B22GTHRSG.H2LA00214", "P.B23GTHRSG.H3LA00214"],
+                             ["P.B31GTHRSG.H1LA00214", "P.B32GTHRSG.H2LA00214", "P.B33GTHRSG.H3LA00214"]]
+
+        lp_steam_flow = []
+        hp_steam_flow = []
+
+        try:
+            for i in range(3):
+                raw_lp_steam_flow = self.get_raw_data_last(tag_lp_steam_flow[i])
+                raw_hp_steam_flow = self.get_raw_data_last(tag_hp_steam_flow[i])
+                sum_lp_steam_flow = raw_lp_steam_flow.sum(axis=0).iloc[0]
+                sum_hp_steam_flow = raw_hp_steam_flow.sum(axis=0).iloc[0]
+                lp_steam_flow += [sum_lp_steam_flow]
+                hp_steam_flow += [sum_hp_steam_flow]
+        except BaseException as e:
+            rospy.logerr("Error: " + str(e))
+            return
+
+        # ==============================
+
+        tag_mw = [["P.B1PLANT.STAI00010"],
+                  ["P.B2PLANT.STAI00010"],
+                  ["P.B3PLANT.STAI00010"]]
+
+        mw = []
+
+        try:
+            for i in range(3):
+                raw_mw = self.get_raw_data_last(tag_mw[i]).iloc[0, 0]
+                mw += [raw_mw]
+        except BaseException as e:
+            rospy.logerr("Error: " + str(e))
+            return
+
+        # ==============================
+
+        lp_enthalpy = [self.get_enthalpy(lp_temperature[i], lp_pressure[i]) for i in range(3)]
+        hp_enthalpy = [self.get_enthalpy(hp_temperature[i], hp_pressure[i]) for i in range(3)]
+        gland_enthalpy = [self.get_enthalpy(gland_temperature[i], gland_pressure[i]) for i in range(3)]
+
+        # ==============================
+
+        st_heat_rate_blok123 = [self.get_heat_rate(lp_enthalpy[i], hp_enthalpy[i], gland_enthalpy[i], lp_steam_flow[i], hp_steam_flow[i], mw[i]) for i in range(3)]
+        st_heat_rate_total = sum(st_heat_rate_blok123)
+
+        # ==============================
+
+        columns = ["blok1",
+                   "blok2",
+                   "blok3",
+                   "total"]
+        values = [str(st_heat_rate_blok123[0]),
+                  str(st_heat_rate_blok123[1]),
+                  str(st_heat_rate_blok123[2]),
+                  str(st_heat_rate_total)]
+
+        try:
+            self.cli_db_delete("tbl_eval_st_heat_rate_last", "")
+            self.cli_db_insert("tbl_eval_st_heat_rate_last", columns, values)
+            self.cli_db_insert("tbl_eval_st_heat_rate", columns, values)
         except BaseException as e:
             rospy.logerr("Error: " + str(e))
             return
