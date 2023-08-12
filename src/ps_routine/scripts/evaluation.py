@@ -114,7 +114,7 @@ class Evaluation:
         '''
         Get raw data from database
         :param name: list of OPC tags
-        :return: pandas dataframe with timestamp as index, OPC tags as columns, and OPC values as values
+        :return: pandas dataframe with OPC tags as index, and OPC values as values
         '''
         # Construct where clause
         where = "name in ("
@@ -133,6 +133,8 @@ class Evaluation:
             temp = ret_df.copy()
             # Pivot data to get timestamp as index, OPC tags as columns, and OPC values as values
             temp = temp.pivot(index="timestamp", columns="name", values="value")
+            # Calculate average of each column to remove NaN value
+            temp = temp.mean(axis=0).to_frame("value")
             # Return data
             ret_df = temp.copy()
         except BaseException as e:
