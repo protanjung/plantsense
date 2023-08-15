@@ -125,7 +125,8 @@ class InterfaceDatabase():
 
         tbl_fuel_param_names = ["name", "min_volume", "max_volume", "price"]
         tbl_fuel_param_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL"]
-        self.db_create_table(self.db_schema, "tbl_fuel_param", tbl_fuel_param_names, tbl_fuel_param_parameters)
+        self.db_create_table(self.db_schema, "tbl_fuel_param_active", tbl_fuel_param_names, tbl_fuel_param_parameters)
+        self.db_create_table(self.db_schema, "tbl_fuel_param_queue", tbl_fuel_param_names, tbl_fuel_param_parameters)
 
         tbl_fuel_rencana_names = ["id", "timestamp_local", "date", "sfc"]
         for i in range(48):
