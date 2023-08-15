@@ -139,13 +139,13 @@ class InterfaceDatabase():
             tbl_fuel_rencana_parameters.append("FLOAT NOT NULL")
         tbl_fuel_rencana_parameters.append("FLOAT NOT NULL")
         for i in range(48):
-            tbl_fuel_rencana_parameters.append("VARCHAR NOT NULL")
-        tbl_fuel_rencana_parameters.append("VARCHAR NOT NULL")
+            tbl_fuel_rencana_parameters.append("JSON NOT NULL")
+        tbl_fuel_rencana_parameters.append("JSON NOT NULL")
         self.db_create_table(self.db_schema, "tbl_fuel_rencana", tbl_fuel_rencana_names, tbl_fuel_rencana_parameters)
         self.db_create_table(self.db_schema, "tbl_fuel_rencana_last", tbl_fuel_rencana_names[2:], tbl_fuel_rencana_parameters[2:])
 
         tbl_fuel_realisasi_names = ["id", "timestamp_local", "sfc", "mw", "result"]
-        tbl_fuel_realisasi_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "FLOAT NOT NULL", "FLOAT NOT NULL", "VARCHAR NOT NULL"]
+        tbl_fuel_realisasi_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "FLOAT NOT NULL", "FLOAT NOT NULL", "JSON NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_fuel_realisasi", tbl_fuel_realisasi_names, tbl_fuel_realisasi_parameters)
         self.db_create_table(self.db_schema, "tbl_fuel_realisasi_last", tbl_fuel_realisasi_names[2:], tbl_fuel_realisasi_parameters[2:])
 
