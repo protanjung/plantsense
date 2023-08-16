@@ -260,6 +260,18 @@ class Routine():
         self.cli_db_insert("tbl_fuel_rencana_last", columns, values)
         self.cli_db_update("tbl_fuel_rencana", columns, values, "date = '" + str(date) + "'")
 
+        # ----------
+
+        for i in range(48):
+            _timestamp = str(date) + " " + str(i // 2).zfill(2) + ":" + str(i % 2 * 30).zfill(2) + ":00"
+            _sfc = str(df_row.loc[0, "sfc"])
+            _mw = str(df_row.loc[0, "mw" + str(i)])
+            _result = str(df_row.loc[0, "value" + str(i)])
+
+            self.cli_db_upsert("tbl_fuel_rencana_simple", ["timestamp", "sfc", "mw", "result"], [_timestamp, _sfc, _mw, _result], "timestamp")
+
+        # ----------
+
         return {"status": 0, "message": "Berhasil"}
 
     # --------------------------------------------------------------------------
