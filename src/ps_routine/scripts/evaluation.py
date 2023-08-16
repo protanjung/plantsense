@@ -211,6 +211,7 @@ class Evaluation:
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
+            return
 
         # ==============================
 
@@ -233,6 +234,7 @@ class Evaluation:
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
+            return
 
         # ==============================
 
@@ -266,6 +268,7 @@ class Evaluation:
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
+            return
 
         # ==============================
 
@@ -315,6 +318,7 @@ class Evaluation:
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
+            return
 
     def steam_turbine_heat_rate(self):
         tag_lp_temperature = [["P.B1PLANT.STAI00014"],
@@ -348,6 +352,7 @@ class Evaluation:
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
+            return
 
         # ==============================
 
@@ -370,6 +375,7 @@ class Evaluation:
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
+            return
 
         # ==============================
 
@@ -394,6 +400,7 @@ class Evaluation:
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
+            return
 
         # ==============================
 
@@ -410,6 +417,7 @@ class Evaluation:
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
+            return
 
         # ==============================
 
@@ -438,6 +446,7 @@ class Evaluation:
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
+            return
 
     # --------------------------------------------------------------------------
 
