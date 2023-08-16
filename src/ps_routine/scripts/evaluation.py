@@ -6,6 +6,7 @@ from ps_interface.srv import db_select, db_selectResponse
 from ps_interface.srv import db_update, db_updateResponse
 from ps_interface.srv import db_upsert, db_upsertResponse
 from ps_interface.srv import db_delete, db_deleteResponse
+import sys
 import time
 import json
 import pandas as pd
@@ -106,7 +107,7 @@ class Evaluation:
             temp = temp.interpolate(method="linear", limit_direction="both")
             # Return data
             ret_df = temp.copy()
-        except BaseException as e:
+        except Exception as e:
             rospy.logerr("Error: " + str(e))
             return pd.DataFrame()
 
@@ -139,7 +140,7 @@ class Evaluation:
             temp = temp.mean(axis=0).to_frame("value")
             # Return data
             ret_df = temp.copy()
-        except BaseException as e:
+        except Exception as e:
             rospy.logerr("Error: " + str(e))
             return pd.DataFrame()
 
@@ -157,18 +158,6 @@ class Evaluation:
 
         return df.median(axis=1).to_frame("median")
 
-    def get_median_per_column(self, df):
-        '''
-        Get median value per column
-        :param df: pandas dataframe with timestamp as index, OPC tags as columns, and OPC values as values
-        :return: pandas dataframe with OPC tags as index, and median value as values
-        '''
-        if df.empty:
-            rospy.logerr("Error: df must have at least 1 column")
-            return pd.DataFrame()
-
-        return df.median(axis=0).to_frame("median")
-
     def get_average_per_row(self, df):
         '''
         Get average value per row
@@ -180,18 +169,6 @@ class Evaluation:
             return pd.DataFrame()
 
         return df.mean(axis=1).to_frame("average")
-
-    def get_average_per_column(self, df):
-        '''
-        Get average value per column
-        :param df: pandas dataframe with timestamp as index, OPC tags as columns, and OPC values as values
-        :return: pandas dataframe with OPC tags as index, and average value as values
-        '''
-        if df.empty:
-            rospy.logerr("Error: df must have at least 1 column")
-            return pd.DataFrame()
-
-        return df.mean(axis=0).to_frame("average")
 
     def linear_regression(self, df):
         '''
@@ -231,9 +208,9 @@ class Evaluation:
                 raw_damper_full_close = self.get_raw_data_last(tag_damper_full_close[i]).iloc[0, 0]
                 isopen_damper += [1 if raw_damper_full_open > 0.5 else 0]
                 isclose_damper += [1 if raw_damper_full_close > 0.5 else 0]
-        except BaseException as e:
-            rospy.logerr("Error: " + str(e))
-            return
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
 
         # ==============================
 
@@ -253,9 +230,9 @@ class Evaluation:
                 raw_cso_lcv_hp = self.get_raw_data_last(tag_cso_lcv_hp[i]).iloc[0, 0]
                 isclose_cso_lcv_lp += [1 if raw_cso_lcv_lp > 99.99 else 0]
                 isclose_cso_lcv_hp += [1 if raw_cso_lcv_hp > 99.99 else 0]
-        except BaseException as e:
-            rospy.logerr("Error: " + str(e))
-            return
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
 
         # ==============================
 
@@ -286,9 +263,9 @@ class Evaluation:
                 m_c_hp_level += [self.linear_regression(median_hp_level)]
                 trend_lp_level += [1 if m_c_lp_level[i][0] > lp_level_uptrend_threshold else -1 if m_c_lp_level[i][0] < lp_level_downtrend_threshold else 0]
                 trend_hp_level += [1 if m_c_hp_level[i][0] > hp_level_uptrend_threshold else -1 if m_c_hp_level[i][0] < hp_level_downtrend_threshold else 0]
-        except BaseException as e:
-            rospy.logerr("Error: " + str(e))
-            return
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
 
         # ==============================
 
@@ -335,9 +312,9 @@ class Evaluation:
             self.cli_db_delete("tbl_eval_kebocoran_feed_water_last", "")
             self.cli_db_insert("tbl_eval_kebocoran_feed_water_last", columns, values)
             self.cli_db_insert("tbl_eval_kebocoran_feed_water", columns, values)
-        except BaseException as e:
-            rospy.logerr("Error: " + str(e))
-            return
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
 
     def steam_turbine_heat_rate(self):
         tag_lp_temperature = [["P.B1PLANT.STAI00014"],
@@ -368,9 +345,9 @@ class Evaluation:
                 lp_temperature += [raw_lp_temperature]
                 hp_pressure += [raw_hp_pressure]
                 hp_temperature += [raw_hp_temperature]
-        except BaseException as e:
-            rospy.logerr("Error: " + str(e))
-            return
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
 
         # ==============================
 
@@ -390,9 +367,9 @@ class Evaluation:
                 raw_gland_pressure = self.get_raw_data_last(tag_gland_pressure[i]).iloc[0]
                 gland_temperature += [raw_gland_temperature]
                 gland_pressure += [raw_gland_pressure]
-        except BaseException as e:
-            rospy.logerr("Error: " + str(e))
-            return
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
 
         # ==============================
 
@@ -414,9 +391,9 @@ class Evaluation:
                 sum_hp_steam_flow = raw_hp_steam_flow.sum(axis=0).iloc[0]
                 lp_steam_flow += [sum_lp_steam_flow]
                 hp_steam_flow += [sum_hp_steam_flow]
-        except BaseException as e:
-            rospy.logerr("Error: " + str(e))
-            return
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
 
         # ==============================
 
@@ -430,9 +407,9 @@ class Evaluation:
             for i in range(3):
                 raw_mw = self.get_raw_data_last(tag_mw[i]).iloc[0, 0]
                 mw += [raw_mw]
-        except BaseException as e:
-            rospy.logerr("Error: " + str(e))
-            return
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
 
         # ==============================
 
@@ -458,9 +435,9 @@ class Evaluation:
             self.cli_db_delete("tbl_eval_st_heat_rate_last", "")
             self.cli_db_insert("tbl_eval_st_heat_rate_last", columns, values)
             self.cli_db_insert("tbl_eval_st_heat_rate", columns, values)
-        except BaseException as e:
-            rospy.logerr("Error: " + str(e))
-            return
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
 
     # --------------------------------------------------------------------------
 

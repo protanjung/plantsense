@@ -145,6 +145,10 @@ class InterfaceDatabase():
         self.db_create_table(self.db_schema, "tbl_fuel_rencana", tbl_fuel_rencana_names, tbl_fuel_rencana_parameters)
         self.db_create_table(self.db_schema, "tbl_fuel_rencana_last", tbl_fuel_rencana_names[2:], tbl_fuel_rencana_parameters[2:])
 
+        tbl_fuel_rencana_simple_names = ["id", "timestamp_local", "timestamp", "sfc", "mw", "result"]
+        tbl_fuel_rencana_simple_parameters = ["SERIAL NOT NULL", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "TIMESTAMP NOT NULL PRIMARY KEY", "FLOAT NOT NULL", "FLOAT NOT NULL", "JSON NOT NULL"]
+        self.db_create_table(self.db_schema, "tbl_fuel_rencana_simple", tbl_fuel_rencana_simple_names, tbl_fuel_rencana_simple_parameters)
+
         tbl_fuel_realisasi_names = ["id", "timestamp_local", "sfc", "mw", "result"]
         tbl_fuel_realisasi_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "FLOAT NOT NULL", "FLOAT NOT NULL", "JSON NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_fuel_realisasi", tbl_fuel_realisasi_names, tbl_fuel_realisasi_parameters)
