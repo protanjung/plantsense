@@ -306,6 +306,10 @@ class Routine():
 
     @app.route("/trigger", methods=["GET"])
     def flask_trigger():
+        param = {}
+        param["date"] = str(request.form["date"]) if "date" in request.form else None
+        param["sfc"] = str(request.form["sfc"]) if "sfc" in request.form else None
+
         result = routine.trigger_fuel()
         return jsonify(result)
 
