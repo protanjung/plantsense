@@ -92,6 +92,7 @@ services:
       TZ: "Asia/Jakarta"
     volumes:
       - ${HOME}/docker-data/ai_reports:/server/reports # Addition
+      - ${HOME}/docker-data/ai_models:/server/saved_models # Addition
 
 volumes:
   portainer-data:
