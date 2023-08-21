@@ -145,8 +145,8 @@ class Routine():
         # ----------
 
         try:
-            self.result_from_value_manual = json.dumps(self.optimize_fuel(self.fuel_sfc, self.megawatt_from_value_manual), indent=2)
-            self.result_from_tag_manual = json.dumps(self.optimize_fuel(self.fuel_sfc, self.megawatt_from_tag_manual), indent=2)
+            self.result_from_value_manual = json.dumps(self.optimize_fuel_active(self.fuel_sfc, self.megawatt_from_value_manual), indent=2)
+            self.result_from_tag_manual = json.dumps(self.optimize_fuel_active(self.fuel_sfc, self.megawatt_from_tag_manual), indent=2)
             self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_result_from_value_manual", str(self.result_from_value_manual)], "name")
             self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_result_from_tag_manual", str(self.result_from_tag_manual)], "name")
         except Exception as e:
@@ -199,7 +199,7 @@ class Routine():
 
     # --------------------------------------------------------------------------
 
-    def optimize_fuel(self, sfc, megawatt):
+    def optimize_fuel_active(self, sfc, megawatt):
         number_of_variables = len(self.df_fuel_param_active)
 
         variables = [LpVariable(self.df_fuel_param_active["name"][i],
@@ -224,6 +224,31 @@ class Routine():
 
         return result
 
+    def optimize_fuel_queue(self, sfc, megawatt):
+        number_of_variables = len(self.df_fuel_param_queue)
+
+        variables = [LpVariable(self.df_fuel_param_queue["name"][i],
+                                self.df_fuel_param_queue["min_volume"][i],
+                                self.df_fuel_param_queue["max_volume"][i]) for i in range(number_of_variables)]
+
+        problem = LpProblem("Optimization", LpMinimize)
+        problem += lpSum([self.df_fuel_param_queue["price"][i] * variables[i] for i in range(number_of_variables)])
+        problem += lpSum([variables[i] for i in range(number_of_variables)]) == float(sfc) * float(megawatt) * 24.0 * 1000.0
+
+        status = problem.solve(PULP_CBC_CMD(msg=0))
+
+        result = {}
+        result["status"] = LpStatus[status]
+        result["sfc"] = float(sfc)
+        result["megawatt"] = float(megawatt)
+        result["volume"] = float(sfc) * float(megawatt) * 24.0
+        result["cost"] = problem.objective.value()
+        result["purchase"] = {}
+        for i in range(number_of_variables):
+            result["purchase"][self.df_fuel_param_queue["name"][i]] = variables[i].value()
+
+        return result
+
     def trigger_fuel(self):
         date = time.strftime("%Y-%m-%d", time.localtime())
         sfc = self.fuel_sfc
@@ -245,7 +270,7 @@ class Routine():
         df_row.loc[0, "date"] = str(date)
         df_row.loc[0, "sfc"] = str(sfc)
         for i in range(48):
-            df_row.loc[0, "value" + str(i)] = json.dumps(self.optimize_fuel(sfc, df_row.loc[0, "mw" + str(i)]), indent=2)
+            df_row.loc[0, "value" + str(i)] = json.dumps(self.optimize_fuel_queue(sfc, df_row.loc[0, "mw" + str(i)]), indent=2)
 
         columns = []
         for i in df_row.columns.tolist()[2:]:
@@ -290,7 +315,7 @@ class Routine():
         param["sfc"] = float(request.form["sfc"])
         param["megawatt"] = float(request.form["megawatt"])
 
-        result = routine.optimize_fuel(param["sfc"], param["megawatt"])
+        result = routine.optimize_fuel_active(param["sfc"], param["megawatt"])
         return jsonify(result)
 
     def thread_flask(self):
