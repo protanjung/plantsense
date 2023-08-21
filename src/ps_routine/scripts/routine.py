@@ -305,7 +305,7 @@ class Routine():
     CORS(app)
 
     @app.route("/trigger", methods=["GET"])
-    def flask_index():
+    def flask_trigger():
         result = routine.trigger_fuel()
         return jsonify(result)
 
