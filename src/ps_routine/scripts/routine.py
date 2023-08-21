@@ -249,9 +249,11 @@ class Routine():
 
         return result
 
-    def trigger_fuel(self):
-        date = time.strftime("%Y-%m-%d", time.localtime())
-        sfc = self.fuel_sfc
+    def trigger_fuel(self, date=None, sfc=None):
+        if date is None:
+            date = time.strftime("%Y-%m-%d", time.localtime())
+        if sfc is None:
+            sfc = self.fuel_sfc
 
         # ----------
 
@@ -310,7 +312,7 @@ class Routine():
         param["date"] = str(request.form["date"]) if "date" in request.form else None
         param["sfc"] = str(request.form["sfc"]) if "sfc" in request.form else None
 
-        result = routine.trigger_fuel()
+        result = routine.trigger_fuel(param["date"], param["sfc"])
         return jsonify(result)
 
     @app.route("/optimize", methods=["GET"])
