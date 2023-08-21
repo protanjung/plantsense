@@ -306,7 +306,7 @@ class Routine():
     app = Flask(__name__)
     CORS(app)
 
-    @app.route("/trigger", methods=["GET"])
+    @app.route("/trigger", methods=["POST"])
     def flask_trigger():
         param = {}
         param["date"] = str(request.form["date"]) if "date" in request.form else None
