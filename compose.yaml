@@ -62,6 +62,19 @@ services:
     ports:
       - 3000:3000
 
+  filebrowser:
+    image: filebrowser/filebrowser:v2
+    container_name: filebrowser
+    restart: always
+    environment:
+      TZ: "Asia/Jakarta"
+    volumes:
+      - ${HOME}/docker-data/filebrowser/filebrowser.db:/filebrowser.db 
+      - ${HOME}/docker-data/filebrowser/.filebrowser.json:/.filebrowser.json
+      - ${HOME}/docker-data:/srv
+    ports:
+      - 8081:80
+
   watchtower:
     image: containrrr/watchtower:latest
     container_name: watchtower
