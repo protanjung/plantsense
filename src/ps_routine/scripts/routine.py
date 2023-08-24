@@ -193,7 +193,7 @@ class Routine():
         flask_thread.start()
 
         # Prometheus
-        start_http_server(5001)
+        start_http_server(8000)
 
         return 0
 

@@ -69,7 +69,7 @@ class Export():
         return jsonify(param)
 
     def thread_flask(self):
-        self.app.run(host="0.0.0.0", port=6000)
+        self.app.run(host="0.0.0.0", port=5001)
 
 
 if __name__ == "__main__":

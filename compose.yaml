@@ -36,6 +36,19 @@ services:
     ports:
       - 8080:8080
 
+  filebrowser:
+    image: filebrowser/filebrowser:v2
+    container_name: filebrowser
+    restart: always
+    environment:
+      TZ: "Asia/Jakarta"
+    volumes:
+      - ${HOME}/docker-data/filebrowser/filebrowser.db:/filebrowser.db 
+      - ${HOME}/docker-data/filebrowser/.filebrowser.json:/.filebrowser.json
+      - ${HOME}/docker-data:/srv
+    ports:
+      - 8081:80
+
   prometheus:
     image: prom/prometheus:v2.43.0
     container_name: prometheus
@@ -58,22 +71,9 @@ services:
       - grafana-var-lib-grafana:/var/lib/grafana
       - grafana-etc-grafana:/etc/grafana
       - grafana-var-log-grafana:/var/log/grafana
-      - ${HOME}/docker-data/grafana_bg:/usr/share/grafana/public/img/bg # Addition
+      - ${HOME}/docker-data/grafana_bg:/usr/share/grafana/public/img/bg # Requested by Taufik
     ports:
       - 3000:3000
-
-  filebrowser:
-    image: filebrowser/filebrowser:v2
-    container_name: filebrowser
-    restart: always
-    environment:
-      TZ: "Asia/Jakarta"
-    volumes:
-      - ${HOME}/docker-data/filebrowser/filebrowser.db:/filebrowser.db 
-      - ${HOME}/docker-data/filebrowser/.filebrowser.json:/.filebrowser.json
-      - ${HOME}/docker-data:/srv
-    ports:
-      - 8081:80
 
   watchtower:
     image: containrrr/watchtower:latest
@@ -96,6 +96,7 @@ services:
     ports:
       - 5000:5000
       - 5001:5001
+      - 8000:8000
 
   ai:
     image: messier12/pjb-ai:latest
@@ -104,8 +105,8 @@ services:
     environment:
       TZ: "Asia/Jakarta"
     volumes:
-      - ${HOME}/docker-data/ai_reports:/server/reports # Addition
-      - ${HOME}/docker-data/ai_models:/server/saved_models # Addition
+      - ${HOME}/docker-data/ai_reports:/server/reports # Requested by Dion
+      - ${HOME}/docker-data/ai_models:/server/saved_models # Requested by Dion
 
 volumes:
   portainer-data:
