@@ -97,7 +97,7 @@ class Export():
 
         return ret_df
 
-    def get_data_step_2(self, df, time_start, time_stop, period=1):
+    def get_data_step_2(self, df, time_start, time_stop, period):
         '''
         Get data from database (step 2)
         :param df: pandas dataframe with timestamp as index, tags as columns, and values as values
@@ -158,7 +158,7 @@ class Export():
 
     # --------------------------------------------------------------------------
 
-    def export_data(self, tags, time_start, time_stop, period=1):
+    def export_data(self, tags, time_start, time_stop, period):
         export_name = time.strftime("%Y%m%d%H%M%S") + ".csv"
         export_path = os.path.join(self.export_path, export_name)
 
