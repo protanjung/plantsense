@@ -93,6 +93,7 @@ services:
       TZ: "Asia/Jakarta"
     volumes:
       - ${HOME}/docker-data/plantsense/root/plantsense-data:/root/plantsense-data
+      - ${HOME}/docker-data/data_export:/root/plantsense-data/export #Requested by Pandu
     ports:
       - 5000:5000
       - 5001:5001
