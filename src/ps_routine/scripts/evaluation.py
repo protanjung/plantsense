@@ -8,7 +8,6 @@ from ps_interface.srv import db_upsert, db_upsertResponse
 from ps_interface.srv import db_delete, db_deleteResponse
 import sys
 import time
-import json
 import pandas as pd
 import numpy as np
 import pyromat as pm
@@ -99,8 +98,6 @@ class Evaluation:
             # Add NaN value at time start and time stop
             temp.loc[time_start] = None
             temp.loc[time_stop] = None
-            # Sort data by timestamp index in ascending order
-            temp = temp.sort_index()
             # Resample data to get data at every period
             temp = temp.resample(str(period) + "S").mean()
             # Interpolate data to fill NaN value
@@ -358,7 +355,7 @@ class Evaluation:
 
         tag_gland_temperature = [["P.B1PLANT.DALA00345"],
                                  ["P.B2PLANT.DALA00345"],
-                                 ["P.B2PLANT.DALA00345"]]
+                                 ["P.B2PLANT.DALA00345"]]  # ! NEED TO BE CHANGED
         tag_gland_pressure = [["P.B1PLANT.BPAI00005"],
                               ["P.B2PLANT.BPAI00005"],
                               ["P.B3PLANT.BPAI00005"]]

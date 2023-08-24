@@ -1,21 +1,41 @@
 <launch>
-    <arg name="data_path" default="$(env HOME)/plantsense-data" />
+    <group ns="namespace0">
+        <arg name="data_path" default="$(env HOME)/plantsense-data" />
 
-    <!--  -->
+        <!--  -->
 
-    <arg name="log_path" value="$(arg data_path)/log" />
-    <arg name="param_path" value="$(arg data_path)/param" />
-    <param name="log_path" value="$(arg log_path)" />
-    <param name="param_path" value="$(arg param_path)" />
+        <arg name="param_path" value="$(arg data_path)/param" />
+        <param name="param_path" value="$(arg param_path)" />
 
-    <!--  -->
+        <!--  -->
 
-    <rosparam file="$(arg param_path)/plantsense.yaml" command="load" />
+        <rosparam file="$(arg param_path)/plantsense.yaml" command="load" />
 
-    <!--  -->
+        <!--  -->
 
-    <node name="interface_database" pkg="ps_interface" type="interface_database.py" output="screen" respawn="true" />
-    <node name="interface_gateway" pkg="ps_interface" type="interface_gateway.py" output="screen" respawn="true" />
-    <node name="routine" pkg="ps_routine" type="routine.py" output="screen" respawn="true" />
-    <node name="evaluation" pkg="ps_routine" type="evaluation.py" output="screen" respawn="true" />
+        <node name="interface_database" pkg="ps_interface" type="interface_database.py" output="screen" respawn="true" />
+        <node name="interface_gateway" pkg="ps_interface" type="interface_gateway.py" output="screen" respawn="true" />
+        <node name="routine" pkg="ps_routine" type="routine.py" output="screen" respawn="true" />
+        <node name="evaluation" pkg="ps_routine" type="evaluation.py" output="screen" respawn="true" />
+    </group>
+
+    <group ns="namespace1">
+        <arg name="data_path" default="$(env HOME)/plantsense-data" />
+
+        <!--  -->
+
+        <arg name="param_path" value="$(arg data_path)/param" />
+        <arg name="export_path" value="$(arg data_path)/export" />
+        <param name="param_path" value="$(arg param_path)" />
+        <param name="export_path" value="$(arg export_path)" />
+
+        <!--  -->
+
+        <rosparam file="$(arg param_path)/plantsense.yaml" command="load" />
+
+        <!--  -->
+
+        <node name="interface_database" pkg="ps_interface" type="interface_database.py" output="screen" respawn="true" />
+        <node name="export" pkg="ps_routine" type="export.py" output="screen" respawn="true" />
+    </group>
 </launch>
