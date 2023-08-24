@@ -145,6 +145,8 @@ class Export():
             temp = df.copy()
             # Replace NaN value with previous value
             temp = temp.fillna(method="ffill")
+            # Round value to 3 decimal places
+            temp = temp.round(3)
             # Return data
             ret_df = temp.copy()
         except Exception as e:
