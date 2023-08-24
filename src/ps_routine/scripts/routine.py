@@ -12,10 +12,10 @@ import time
 import json
 import threading
 import pandas as pd
-from pulp import LpMinimize, LpProblem, LpStatus, LpVariable, lpSum
-from pulp.apis import PULP_CBC_CMD
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from pulp import LpMinimize, LpProblem, LpStatus, LpVariable, lpSum
+from pulp.apis import PULP_CBC_CMD
 from prometheus_client import start_http_server, Gauge
 
 
@@ -187,13 +187,13 @@ class Routine():
     def routine_init(self):
         time.sleep(2.0)
 
-        # Prometheus
-        start_http_server(5001)
-
         # Flask
         flask_thread = threading.Thread(target=self.thread_flask)
         flask_thread.daemon = True
         flask_thread.start()
+
+        # Prometheus
+        start_http_server(5001)
 
         return 0
 
@@ -315,13 +315,31 @@ class Routine():
         result = routine.trigger_fuel(param["date"], param["sfc"])
         return jsonify(result)
 
-    @app.route("/optimize", methods=["GET"])
+    @app.route("/optimize", methods=["POST"])
     def flask_optimize():
         param = {}
         param["sfc"] = float(request.form["sfc"])
         param["megawatt"] = float(request.form["megawatt"])
 
         result = routine.optimize_fuel_active(param["sfc"], param["megawatt"])
+        return jsonify(result)
+
+    @app.route("/optimize_active", methods=["POST"])
+    def flask_optimize_active():
+        param = {}
+        param["sfc"] = float(request.form["sfc"])
+        param["megawatt"] = float(request.form["megawatt"])
+
+        result = routine.optimize_fuel_active(param["sfc"], param["megawatt"])
+        return jsonify(result)
+
+    @app.route("/optimize_queue", methods=["POST"])
+    def flask_optimize_queue():
+        param = {}
+        param["sfc"] = float(request.form["sfc"])
+        param["megawatt"] = float(request.form["megawatt"])
+
+        result = routine.optimize_fuel_queue(param["sfc"], param["megawatt"])
         return jsonify(result)
 
     def thread_flask(self):
