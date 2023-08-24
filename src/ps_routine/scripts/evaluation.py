@@ -8,7 +8,6 @@ from ps_interface.srv import db_upsert, db_upsertResponse
 from ps_interface.srv import db_delete, db_deleteResponse
 import sys
 import time
-import json
 import pandas as pd
 import numpy as np
 import pyromat as pm
