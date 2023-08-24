@@ -98,8 +98,6 @@ class Evaluation:
             # Add NaN value at time start and time stop
             temp.loc[time_start] = None
             temp.loc[time_stop] = None
-            # Sort data by timestamp index in ascending order
-            temp = temp.sort_index()
             # Resample data to get data at every period
             temp = temp.resample(str(period) + "S").mean()
             # Interpolate data to fill NaN value
