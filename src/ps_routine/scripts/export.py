@@ -156,6 +156,19 @@ class Export():
 
     # --------------------------------------------------------------------------
 
+    def export_data(self, tags, time_start, time_stop, period=1):
+        try:
+            step1 = self.get_data_step_1(tags, time_start, time_stop)
+            step2 = self.get_data_step_2(step1, time_start, time_stop, period)
+            step3 = self.get_data_step_3(step2)
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            return {"status": "-1", "message": str(e) + " at line " + str(exc_tb.tb_lineno)}
+
+        return {"status": "0", "message": "Berhasil"}
+
+    # --------------------------------------------------------------------------
+
     app = Flask(__name__)
     CORS(app)
 
