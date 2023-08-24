@@ -157,15 +157,29 @@ class Export():
     # --------------------------------------------------------------------------
 
     def export_data(self, tags, time_start, time_stop, period=1):
+        export_name = time.strftime("%Y%m%d%H%M%S") + ".csv"
+        export_path = os.path.join(self.export_path, export_name)
+
+        # Mark time start
+        export_start = time.time()
+
         try:
+            # Going through step 1, 2, and 3
             step1 = self.get_data_step_1(tags, time_start, time_stop)
             step2 = self.get_data_step_2(step1, time_start, time_stop, period)
             step3 = self.get_data_step_3(step2)
+            # Export data to csv
+            step3.to_csv(export_path)
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             return {"status": "-1", "message": str(e) + " at line " + str(exc_tb.tb_lineno)}
 
-        return {"status": "0", "message": "Berhasil"}
+        # Mark time stop
+        export_stop = time.time()
+        # Calculate elapsed time
+        elapsed_time = export_stop - export_start
+
+        return {"status": "0", "message": "Berhasil", "path": export_path, "name": export_name, "time": elapsed_time}
 
     # --------------------------------------------------------------------------
 
