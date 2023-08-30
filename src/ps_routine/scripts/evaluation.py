@@ -226,8 +226,8 @@ class Evaluation:
             for i in range(3):
                 raw_cso_lcv_lp = self.get_raw_data_last(tag_cso_lcv_lp[i]).iloc[0, 0]
                 raw_cso_lcv_hp = self.get_raw_data_last(tag_cso_lcv_hp[i]).iloc[0, 0]
-                isclose_cso_lcv_lp += [1 if raw_cso_lcv_lp > 99.99 else 0]
-                isclose_cso_lcv_hp += [1 if raw_cso_lcv_hp > 99.99 else 0]
+                isclose_cso_lcv_lp += [1 if raw_cso_lcv_lp < 0.01 else 0]
+                isclose_cso_lcv_hp += [1 if raw_cso_lcv_hp < 0.01 else 0]
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
