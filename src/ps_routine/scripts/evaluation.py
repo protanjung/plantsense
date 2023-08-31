@@ -355,7 +355,7 @@ class Evaluation:
 
         tag_gland_temperature = [["P.B1PLANT.DALA00345"],
                                  ["P.B2PLANT.DALA00345"],
-                                 ["P.B2PLANT.DALA00345"]]  # ! NEED TO BE CHANGED
+                                 ["P.B3PLANT.DAAI00345"]]
         tag_gland_pressure = [["P.B1PLANT.BPAI00005"],
                               ["P.B2PLANT.BPAI00005"],
                               ["P.B3PLANT.BPAI00005"]]
