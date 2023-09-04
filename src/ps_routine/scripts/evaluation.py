@@ -269,14 +269,6 @@ class Evaluation:
 
         # ==============================
 
-        # ! FOR TESTING ONLY
-        # isclose_cso_lcv_lp = [1, 1, 1]
-        # isclose_cso_lcv_hp = [1, 1, 1]
-        # isclose_damper = [1, 1, 1]
-        # ! FOR TESTING ONLY
-
-        # ==============================
-
         isleak_lp = []
         isleak_hp = []
 
@@ -309,8 +301,6 @@ class Evaluation:
                   str(isleak_lp[2]), str(isleak_hp[2])]
 
         try:
-            self.cli_db_delete("tbl_eval_kebocoran_feed_water_last", "")
-            self.cli_db_insert("tbl_eval_kebocoran_feed_water_last", columns, values)
             self.cli_db_insert("tbl_eval_kebocoran_feed_water", columns, values)
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -437,8 +427,6 @@ class Evaluation:
                   str(st_heat_rate_total)]
 
         try:
-            self.cli_db_delete("tbl_eval_st_heat_rate_last", "")
-            self.cli_db_insert("tbl_eval_st_heat_rate_last", columns, values)
             self.cli_db_insert("tbl_eval_st_heat_rate", columns, values)
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
