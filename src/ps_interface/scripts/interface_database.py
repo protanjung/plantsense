@@ -6,13 +6,14 @@ from ps_interface.srv import db_select, db_selectResponse
 from ps_interface.srv import db_update, db_updateResponse
 from ps_interface.srv import db_upsert, db_upsertResponse
 from ps_interface.srv import db_delete, db_deleteResponse
+import sys
 from threading import Lock
 import psycopg2
 import pandas as pd
 
 
 class InterfaceDatabase():
-    def __init__(self):
+    def __init__(self, is_create_table=False):
         # =====Parameter
         self.db_host = rospy.get_param("db/host", "postgres")
         self.db_port = rospy.get_param("db/port", 5432)
@@ -30,6 +31,8 @@ class InterfaceDatabase():
         self.srv_db_delete = rospy.Service("db_delete", db_delete, self.cllbck_srv_db_delete)
         # =====Mutex
         self.mutex_db = Lock()
+
+        self.is_create_table = is_create_table
 
         if self.interface_database_init() == -1:
             rospy.signal_shutdown("")
@@ -242,6 +245,9 @@ class InterfaceDatabase():
     # --------------------------------------------------------------------------
 
     def db_create_table(self, table_schema, table_name, column_names, column_parameters):
+        if not self.is_create_table:
+            return
+
         is_exist = False
         is_same = False
 
@@ -380,6 +386,12 @@ class InterfaceDatabase():
 
 
 if __name__ == "__main__":
+    is_create_table = False
+    for i in range(len(sys.argv)):
+        if sys.argv[i] == "--is_create_table":
+            is_create_table = True
+            break
+
     rospy.init_node("interface_database")
-    interface_database = InterfaceDatabase()
+    interface_database = InterfaceDatabase(is_create_table)
     rospy.spin()
