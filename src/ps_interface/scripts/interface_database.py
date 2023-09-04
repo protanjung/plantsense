@@ -103,7 +103,7 @@ class InterfaceDatabase():
         self.mutex_db.release()
 
         # ==============================
-        # Parameter
+        # Param
         # ==============================
 
         tbl_param_names = ["name", "value"]
@@ -111,25 +111,25 @@ class InterfaceDatabase():
         self.db_create_table(self.db_schema, "tbl_param", tbl_param_names, tbl_param_parameters)
 
         # ==============================
-        # OPC
+        # Data
         # ==============================
 
-        tbl_data_names = ["id", "timestamp_local", "name", "value", "timestamp"]
-        tbl_data_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "VARCHAR NOT NULL", "FLOAT NOT NULL", "TIMESTAMP NOT NULL"]
-        self.db_create_table(self.db_schema, "tbl_data", tbl_data_names, tbl_data_parameters)
-        self.db_create_table(self.db_schema, "tbl_data_last60sec", tbl_data_names, tbl_data_parameters)
-        self.db_create_table(self.db_schema, "tbl_data_last1800sec", tbl_data_names, tbl_data_parameters)
-        tbl_data_parameters[2] = "VARCHAR NOT NULL PRIMARY KEY"
-        self.db_create_table(self.db_schema, "tbl_data_last", tbl_data_names[2:], tbl_data_parameters[2:])
+        tbl_data_names = ["name", "value", "timestamp"]
+        tbl_data_parameters = ["VARCHAR NOT NULL", "FLOAT NOT NULL", "TIMESTAMP NOT NULL"]
+        self.db_init_table(self.db_schema, "tbl_data", tbl_data_names, tbl_data_parameters)
 
         # ==============================
-        # Fuel
+        # Fuel Param
         # ==============================
 
         tbl_fuel_param_names = ["name", "min_volume", "max_volume", "price"]
         tbl_fuel_param_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_fuel_param_active", tbl_fuel_param_names, tbl_fuel_param_parameters)
         self.db_create_table(self.db_schema, "tbl_fuel_param_queue", tbl_fuel_param_names, tbl_fuel_param_parameters)
+
+        # ==============================
+        # Fuel Rencana
+        # ==============================
 
         tbl_fuel_rencana_names = ["id", "timestamp_local", "date", "sfc"]
         for i in range(48):
@@ -146,99 +146,104 @@ class InterfaceDatabase():
             tbl_fuel_rencana_parameters.append("JSON NOT NULL")
         tbl_fuel_rencana_parameters.append("JSON NOT NULL")
         self.db_create_table(self.db_schema, "tbl_fuel_rencana", tbl_fuel_rencana_names, tbl_fuel_rencana_parameters)
-        self.db_create_table(self.db_schema, "tbl_fuel_rencana_last", tbl_fuel_rencana_names[2:], tbl_fuel_rencana_parameters[2:])
+
+        # ==============================
+        # Fuel Rencana SImple
+        # ==============================
 
         tbl_fuel_rencana_simple_names = ["id", "timestamp_local", "timestamp", "sfc", "mw", "result"]
         tbl_fuel_rencana_simple_parameters = ["SERIAL NOT NULL", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "TIMESTAMP NOT NULL PRIMARY KEY", "FLOAT NOT NULL", "FLOAT NOT NULL", "JSON NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_fuel_rencana_simple", tbl_fuel_rencana_simple_names, tbl_fuel_rencana_simple_parameters)
 
-        tbl_fuel_realisasi_names = ["id", "timestamp_local", "sfc", "mw", "result"]
-        tbl_fuel_realisasi_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "FLOAT NOT NULL", "FLOAT NOT NULL", "JSON NOT NULL"]
-        self.db_create_table(self.db_schema, "tbl_fuel_realisasi", tbl_fuel_realisasi_names, tbl_fuel_realisasi_parameters)
-        self.db_create_table(self.db_schema, "tbl_fuel_realisasi_last", tbl_fuel_realisasi_names[2:], tbl_fuel_realisasi_parameters[2:])
-
         # ==============================
-        # Inference
+        # Fuel Realisasi
         # ==============================
 
-        tbl_inference_output_names = [
-            "id",
-            "timestamp_local",
-            "flame_out",
-            "gagal_naik",
-            "trip",
-            "cv174_sv",
-            "cv174_fb",
-            "cv165_sv",
-            "cv165_fb",
-            "fuel_gas_flow",
-            "cv147a_sv",
-            "cv147a_fb",
-            "cv147b_sv",
-            "cv147b_fb",
-            "cv135a_sv",
-            "cv135a_fb",
-            "fuel_oil_flow",
-            "comb_shell_press",
-            "bp_avg_temp",
-            "log"
-        ]
-        tbl_inference_output_parameters = [
-            "SERIAL NOT NULL PRIMARY KEY",
-            "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP",
-            "INT NOT NULL",
-            "INT NOT NULL",
-            "INT NOT NULL",
-            "FLOAT NOT NULL",
-            "FLOAT NOT NULL",
-            "FLOAT NOT NULL",
-            "FLOAT NOT NULL",
-            "FLOAT NOT NULL",
-            "FLOAT NOT NULL",
-            "FLOAT NOT NULL",
-            "FLOAT NOT NULL",
-            "FLOAT NOT NULL",
-            "FLOAT NOT NULL",
-            "FLOAT NOT NULL",
-            "FLOAT NOT NULL",
-            "FLOAT NOT NULL",
-            "FLOAT NOT NULL",
-            "VARCHAR NOT NULL"
-        ]
-        self.db_create_table(self.db_schema, "tbl_inference_output", tbl_inference_output_names, tbl_inference_output_parameters)
-        self.db_create_table(self.db_schema, "tbl_inference_output_last1800sec", tbl_inference_output_names, tbl_inference_output_parameters)
-        self.db_create_table(self.db_schema, "tbl_inference_output_last", tbl_inference_output_names[2:], tbl_inference_output_parameters[2:])
+        tbl_fuel_realisasi_names = ["sfc", "mw", "result"]
+        tbl_fuel_realisasi_parameters = ["FLOAT NOT NULL", "FLOAT NOT NULL", "JSON NOT NULL"]
+        self.db_init_table(self.db_schema, "tbl_fuel_realisasi", tbl_fuel_realisasi_names, tbl_fuel_realisasi_parameters)
 
         # ==============================
         # Eval Kebocoran Feed Water
         # ==============================
 
-        tbl_eval_kebocoran_feed_water_names = ["id", "timestamp_local",
-                                               "m11_lp", "m11_hp", "m12_lp", "m12_hp", "m13_lp", "m13_hp",
-                                               "leak11_lp", "leak11_hp", "leak12_lp", "leak12_hp", "leak13_lp", "leak13_hp"]
-        tbl_eval_kebocoran_feed_water_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP",
-                                                    "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL",
-                                                    "INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL"]
-        self.db_create_table(self.db_schema, "tbl_eval_kebocoran_feed_water", tbl_eval_kebocoran_feed_water_names, tbl_eval_kebocoran_feed_water_parameters)
-        self.db_create_table(self.db_schema, "tbl_eval_kebocoran_feed_water_last", tbl_eval_kebocoran_feed_water_names[2:], tbl_eval_kebocoran_feed_water_parameters[2:])
+        tbl_eval_kebocoran_feed_water_names = ["m11_lp", "m11_hp", "m12_lp", "m12_hp", "m13_lp", "m13_hp", "leak11_lp", "leak11_hp", "leak12_lp", "leak12_hp", "leak13_lp", "leak13_hp"]
+        tbl_eval_kebocoran_feed_water_parameters = ["FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL"]
+        self.db_init_table(self.db_schema, "tbl_eval_kebocoran_feed_water", tbl_eval_kebocoran_feed_water_names, tbl_eval_kebocoran_feed_water_parameters)
 
         # ==============================
-        # Eval Steam Turbine Heat Rate
+        # Eval ST Heat Rate
         # ==============================
 
-        tbl_eval_st_heat_rate_names = ["id", "timestamp_local", "blok1", "blok2", "blok3", "total"]
-        tbl_eval_st_heat_rate_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL"]
-        self.db_create_table(self.db_schema, "tbl_eval_st_heat_rate", tbl_eval_st_heat_rate_names, tbl_eval_st_heat_rate_parameters)
-        self.db_create_table(self.db_schema, "tbl_eval_st_heat_rate_last", tbl_eval_st_heat_rate_names[2:], tbl_eval_st_heat_rate_parameters[2:])
+        tbl_eval_st_heat_rate_names = ["blok1", "blok2", "blok3", "total"]
+        tbl_eval_st_heat_rate_parameters = ["FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL"]
+        self.db_init_table(self.db_schema, "tbl_eval_st_heat_rate", tbl_eval_st_heat_rate_names, tbl_eval_st_heat_rate_parameters)
 
         # ==============================
-        # Eval Kebocoran Natrium
+        # Eval Anomali BFP
         # ==============================
 
-        tbl_eval_kebocoran_natrium_names = ["id", "timestamp_local", "value"]
-        tbl_eval_kebocoran_natrium_parameters = ["SERIAL NOT NULL PRIMARY KEY", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "INT NOT NULL"]
-        self.db_create_table(self.db_schema, "tbl_eval_kebocoran_natrium", tbl_eval_kebocoran_natrium_names, tbl_eval_kebocoran_natrium_parameters)
-        self.db_create_table(self.db_schema, "tbl_eval_kebocoran_natrium_last", tbl_eval_kebocoran_natrium_names[2:], tbl_eval_kebocoran_natrium_parameters[2:])
+        tbl_eval_anomali_bfp_names = ["motor_a", "motor_b", "motor_c", "motor_d", "prediksi_rasio_motor_a", "prediksi_rasio_motor_b", "prediksi_rasio_motor_c", "prediksi_rasio_motor_d", "rasio_motor_a", "rasio_motor_b", "rasio_motor_c", "rasio_motor_d"]
+        tbl_eval_anomali_bfp_parameters = ["INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL"]
+        self.db_init_table(self.db_schema, "tbl_eval_anomali_bfp", tbl_eval_anomali_bfp_names, tbl_eval_anomali_bfp_parameters)
+
+        # ==============================
+        # Eval Kebocoran HRSG
+        # ==============================
+
+        tbl_eval_kebocoran_hrsg_names = ["leak_11", "leak_12", "leak_13"]
+        tbl_eval_kebocoran_hrsg_parameters = ["INT NOT NULL", "INT NOT NULL", "INT NOT NULL"]
+        self.db_init_table(self.db_schema, "tbl_eval_kebocoran_hrsg", tbl_eval_kebocoran_hrsg_names, tbl_eval_kebocoran_hrsg_parameters)
+
+        # ==============================
+        # Eval Kebocoran Kondensor
+        # ==============================
+
+        tbl_eval_kebocoran_kondensor_names = ["value"]
+        tbl_eval_kebocoran_kondensor_parameters = ["INT NOT NULL"]
+        self.db_init_table(self.db_schema, "tbl_eval_kebocoran_kondensor", tbl_eval_kebocoran_kondensor_names, tbl_eval_kebocoran_kondensor_parameters)
+
+        # ==============================
+        # Eval CWP
+        # ==============================
+
+        tbl_eval_cwp = ["konfigurasi_11", "konfigurasi_12", "konfigurasi_13", "rekomendasi_cwp"]
+        tbl_eval_cwp_parameters = ["INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL"]
+        self.db_create_table(self.db_schema, "tbl_eval_cwp", tbl_eval_cwp, tbl_eval_cwp_parameters)
+
+        # ==============================
+        # Inference Output
+        # ==============================
+
+        tbl_inference_output_names = ["flame_out", "gagal_naik", "trip", "cv174_sv", "cv174_fb", "cv165_sv", "cv165_fb", "fuel_gas_flow", "cv147a_sv", "cv147a_fb", "cv147b_sv", "cv147b_fb", "cv135a_sv", "cv135a_fb", "fuel_oil_flow", "comb_shell_press", "bp_avg_temp", "log"]
+        tbl_inference_output_parameters = ["INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "VARCHAR NOT NULL"]
+        self.db_init_table(self.db_schema, "tbl_inference_output_11", tbl_inference_output_names, tbl_inference_output_parameters)
+        self.db_init_table(self.db_schema, "tbl_inference_output_12", tbl_inference_output_names, tbl_inference_output_parameters)
+        self.db_init_table(self.db_schema, "tbl_inference_output_13", tbl_inference_output_names, tbl_inference_output_parameters)
+
+        # ==============================
+        # Status Logic Nodes
+        # ==============================
+
+        tbl_status_logic_nodes_names = ["name", "value"]
+        tbl_status_logic_nodes_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "INT NOT NULL"]
+        self.db_create_table(self.db_schema, "tbl_status_logic_nodes", tbl_status_logic_nodes_names, tbl_status_logic_nodes_parameters)
+
+        # ==============================
+        # Status Report Read
+        # ==============================
+
+        tbl_status_report_read_names = ["name", "value"]
+        tbl_status_report_read_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "INT NOT NULL"]
+        self.db_create_table(self.db_schema, "tbl_status_report_read", tbl_status_report_read_names, tbl_status_report_read_parameters)
+
+        # ==============================
+        # Users
+        # ==============================
+
+        tbl_users_names = ["username", "password", "role", "last_login"]
+        tbl_users_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "VARCHAR NOT NULL", "VARCHAR NOT NULL", "TIMESTAMP NOT NULL"]
+        self.db_create_table(self.db_schema, "tbl_users", tbl_users_names, tbl_users_parameters)
 
         return 0
 
