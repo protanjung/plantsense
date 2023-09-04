@@ -110,6 +110,28 @@ class InterfaceDatabase():
         tbl_param_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "VARCHAR NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_param", tbl_param_names, tbl_param_parameters)
 
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["fuel_megawatt_tag_manual", ""], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["fuel_megawatt_value_manual", "750.0"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["fuel_sfc", "0.009"], "name")
+
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["motor_A_bfp_ratio_threshold", "20"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["motor_B_bfp_ratio_threshold", "20"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["motor_C_bfp_ratio_threshold", "20"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["motor_D_bfp_ratio_threshold", "20"], "name")
+
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["make_up_water_flow_threshold", "14"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_diff_feed_water_to_steam_flow_threshold_11", "20"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_diff_feed_water_to_steam_flow_threshold_12", "30"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_diff_feed_water_to_steam_flow_threshold_13", "45"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_diff_feed_water_to_steam_flow_threshold_11", "14"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_diff_feed_water_to_steam_flow_threshold_12", "11"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_diff_feed_water_to_steam_flow_threshold_13", "15"], "name")
+
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_level_uptrend_threshold", "0.05"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_level_downtrend_threshold", "-0.05"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_level_uptrend_threshold", "0.05"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_level_downtrend_threshold", "-0.05"], "name")
+
         # ==============================
         # Data
         # ==============================
