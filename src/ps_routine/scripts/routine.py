@@ -274,8 +274,6 @@ class Routine():
 
         # ----------
 
-        self.cli_db_delete("tbl_fuel_rencana_last", "")
-        self.cli_db_insert("tbl_fuel_rencana_last", columns, values)
         self.cli_db_update("tbl_fuel_rencana", columns, values, "date = '" + str(date) + "'")
 
         # ----------
