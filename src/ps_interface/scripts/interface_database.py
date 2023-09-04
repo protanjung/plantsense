@@ -384,6 +384,95 @@ class InterfaceDatabase():
         self.myDatabase.commit()
         self.mutex_db.release()
 
+    # --------------------------------------------------------------------------
+
+    def db_init_table(self, table_schema, table_name, column_names, column_parameters):
+        if not self.is_create_table:
+            return
+
+        _column_names = ['id', 'timestamp_local']
+        _column_parameters = ['SERIAL NOT NULL PRIMARY KEY', 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP']
+
+        # Create table
+        self.db_create_table(table_schema, table_name, _column_names + column_names, _column_parameters + column_parameters)
+        self.db_create_table(table_schema, table_name + "_last1800sec", _column_names + column_names, _column_parameters + column_parameters)
+        self.db_create_table(table_schema, table_name + "_last", _column_names + column_names, _column_parameters + column_parameters)
+
+        # ------------------------------
+
+        # Create function to insert into "_last1800sec" and "_last" table
+        sql = "CREATE OR REPLACE FUNCTION " + table_name + "_insert() RETURNS TRIGGER AS $$ BEGIN "
+        sql += "INSERT INTO " + table_schema + "." + table_name + "_last1800sec ("
+        for i in range(len(column_names)):
+            sql += column_names[i]
+            if i != len(column_names) - 1:
+                sql += ", "
+        sql += ") VALUES ("
+        for i in range(len(column_names)):
+            sql += "NEW." + column_names[i]
+            if i != len(column_names) - 1:
+                sql += ", "
+        sql += "); "
+        sql += "INSERT INTO " + table_schema + "." + table_name + "_last ("
+        for i in range(len(column_names)):
+            sql += column_names[i]
+            if i != len(column_names) - 1:
+                sql += ", "
+        sql += ") VALUES ("
+        for i in range(len(column_names)):
+            sql += "NEW." + column_names[i]
+            if i != len(column_names) - 1:
+                sql += ", "
+        sql += "); "
+        sql += "RETURN NEW; END; $$ LANGUAGE plpgsql;"
+        self.mutex_db.acquire()
+        self.myCursor.execute(sql)
+        self.myDatabase.commit()
+        self.mutex_db.release()
+
+        # Create trigger to insert into "_last1800sec" and "_last" table
+        sql = "CREATE OR REPLACE TRIGGER " + table_name + "_insert AFTER INSERT ON " + table_schema + "." + table_name + " FOR EACH ROW EXECUTE PROCEDURE " + table_name + "_insert();"
+        self.mutex_db.acquire()
+        self.myCursor.execute(sql)
+        self.myDatabase.commit()
+        self.mutex_db.release()
+
+        # ------------------------------
+
+        # Create function to delete from "_last1800sec" table
+        sql = "CREATE OR REPLACE FUNCTION " + table_name + "_delete_1800sec() RETURNS TRIGGER AS $$ BEGIN "
+        sql += "DELETE FROM " + table_schema + "." + table_name + "_last1800sec WHERE timestamp_local < NOW() - INTERVAL '1800 seconds'; "
+        sql += "RETURN NEW; END; $$ LANGUAGE plpgsql;"
+        self.mutex_db.acquire()
+        self.myCursor.execute(sql)
+        self.myDatabase.commit()
+        self.mutex_db.release()
+
+        # Create trigger to delete from "_last1800sec" table
+        sql = "CREATE OR REPLACE TRIGGER " + table_name + "_delete_1800sec BEFORE INSERT ON " + table_schema + "." + table_name + "_last1800sec FOR EACH ROW EXECUTE PROCEDURE " + table_name + "_delete_1800sec();"
+        self.mutex_db.acquire()
+        self.myCursor.execute(sql)
+        self.myDatabase.commit()
+        self.mutex_db.release()
+
+        # ------------------------------
+
+        # Create function to delete from "_last" table
+        sql = "CREATE OR REPLACE FUNCTION " + table_name + "_delete_last() RETURNS TRIGGER AS $$ BEGIN "
+        sql += "DELETE FROM " + table_schema + "." + table_name + "_last; "
+        sql += "RETURN NEW; END; $$ LANGUAGE plpgsql;"
+        self.mutex_db.acquire()
+        self.myCursor.execute(sql)
+        self.myDatabase.commit()
+        self.mutex_db.release()
+
+        # Create trigger to delete from "_last" table
+        sql = "CREATE OR REPLACE TRIGGER " + table_name + "_delete_last BEFORE INSERT ON " + table_schema + "." + table_name + "_last FOR EACH ROW EXECUTE PROCEDURE " + table_name + "_delete_last();"
+        self.mutex_db.acquire()
+        self.myCursor.execute(sql)
+        self.myDatabase.commit()
+        self.mutex_db.release()
+
 
 if __name__ == "__main__":
     is_create_table = False
