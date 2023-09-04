@@ -26,7 +26,7 @@ class Routine():
         self.fuel_megawatt_value_manual = rospy.get_param("fuel_megawatt_value_manual", 0.0)
         self.fuel_megawatt_tag_manual = rospy.get_param("fuel_megawatt_tag_manual", "")
         # =====Timer
-        # self.tim_1hz = rospy.Timer(rospy.Duration(1), self.cllbck_tim_1hz)
+        self.tim_1hz = rospy.Timer(rospy.Duration(1), self.cllbck_tim_1hz)
         # self.tim_2hz = rospy.Timer(rospy.Duration(0.5), self.cllbck_tim_2hz)
         # =====Subscriber
         self.sub_opcs = rospy.Subscriber("opcs", opcs, self.cllbck_sub_opcs, queue_size=1)
@@ -57,12 +57,8 @@ class Routine():
 
     def cllbck_tim_1hz(self, event):
         try:
-            self.cli_db_delete("tbl_data_last60sec", "timestamp_local < now() - interval '60 second'")
-            self.cli_db_delete("tbl_data_last1800sec", "timestamp_local < now() - interval '1800 second'")
             for opc in self.df_opcs_pool.itertuples():
                 self.cli_db_insert("tbl_data", ["name", "value", "timestamp"], [opc.name, str(opc.value), opc.timestamp])
-                self.cli_db_insert("tbl_data_last60sec", ["name", "value", "timestamp"], [opc.name, str(opc.value), opc.timestamp])
-                self.cli_db_insert("tbl_data_last1800sec", ["name", "value", "timestamp"], [opc.name, str(opc.value), opc.timestamp])
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
@@ -72,7 +68,6 @@ class Routine():
         try:
             json_fuel_param = self.cli_db_select("tbl_fuel_param_active", ["name", "min_volume", "max_volume", "price"], "")
             self.df_fuel_param_active = pd.read_json(json_fuel_param.response, orient="split")
-
             json_fuel_param = self.cli_db_select("tbl_fuel_param_queue", ["name", "min_volume", "max_volume", "price"], "")
             self.df_fuel_param_queue = pd.read_json(json_fuel_param.response, orient="split")
         except Exception as e:
