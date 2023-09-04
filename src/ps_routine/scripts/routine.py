@@ -26,8 +26,8 @@ class Routine():
         self.fuel_megawatt_value_manual = rospy.get_param("fuel_megawatt_value_manual", 0.0)
         self.fuel_megawatt_tag_manual = rospy.get_param("fuel_megawatt_tag_manual", "")
         # =====Timer
-        self.tim_1hz = rospy.Timer(rospy.Duration(1), self.cllbck_tim_1hz)
-        self.tim_2hz = rospy.Timer(rospy.Duration(0.5), self.cllbck_tim_2hz)
+        # self.tim_1hz = rospy.Timer(rospy.Duration(1), self.cllbck_tim_1hz)
+        # self.tim_2hz = rospy.Timer(rospy.Duration(0.5), self.cllbck_tim_2hz)
         # =====Subscriber
         self.sub_opcs = rospy.Subscriber("opcs", opcs, self.cllbck_sub_opcs, queue_size=1)
         # =====ServiceClient
@@ -174,12 +174,10 @@ class Routine():
             if len(indexes) != 0:
                 if self.df_opcs_pool.loc[indexes[0], "timestamp"] < opc.timestamp:
                     self.df_opcs_pool.loc[indexes[0]] = [opc.name, opc.value, opc.timestamp, time.time()]
-                    self.cli_db_upsert("tbl_data_last", ["name", "value", "timestamp"], [opc.name, str(opc.value), opc.timestamp], "name")
                     self.gauge_opc_data.labels(opc.name).set(opc.value)
             # If the opc is not in the pool, insert the opc into the pool
             else:
                 self.df_opcs_pool.loc[len(self.df_opcs_pool)] = [opc.name, opc.value, opc.timestamp, time.time()]
-                self.cli_db_upsert("tbl_data_last", ["name", "value", "timestamp"], [opc.name, str(opc.value), opc.timestamp], "name")
                 self.gauge_opc_data.labels(opc.name).set(opc.value)
 
     # --------------------------------------------------------------------------
