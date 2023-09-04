@@ -380,6 +380,23 @@ class InterfaceDatabase():
         self.myDatabase.commit()
         self.mutex_db.release()
 
+    def db_insert_if_not_exists(self, table_schema, table_name, columns, values, primary_key):
+        sql = "INSERT INTO " + table_schema + "." + table_name + " ("
+        for i in range(len(columns)):
+            sql += columns[i]
+            if i != len(columns) - 1:
+                sql += ", "
+        sql += ") VALUES ("
+        for i in range(len(values)):
+            sql += "'" + str(values[i]) + "'"
+            if i != len(values) - 1:
+                sql += ", "
+        sql += ") ON CONFLICT (" + primary_key + ") DO NOTHING;"
+        self.mutex_db.acquire()
+        self.myCursor.execute(sql)
+        self.myDatabase.commit()
+        self.mutex_db.release()
+
     def db_delete(self, table_schema, table_name, where):
         sql = "DELETE FROM " + table_schema + "." + table_name
         if where != "":
