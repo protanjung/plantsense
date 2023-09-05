@@ -434,20 +434,17 @@ class InterfaceDatabase():
         if not self.is_create_table:
             return
 
+        # Create table
         _column_names = ['id', 'timestamp_local']
         _column_parameters = ['SERIAL NOT NULL PRIMARY KEY', 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP']
-
-        # Create table
         self.db_create_table(table_schema, table_name, _column_names + column_names, _column_parameters + column_parameters)
         self.db_create_table(table_schema, table_name + "_last1800sec", _column_names + column_names, _column_parameters + column_parameters)
+
+        _column_names = ['id', 'timestamp_local']
+        _column_parameters = ['SERIAL NOT NULL', 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP']
         self.db_create_table(table_schema, table_name + "_last", _column_names + column_names, _column_parameters + column_parameters)
 
-        # Change primary key of "_last" table to "primary_key" column
-        sql = "ALTER TABLE " + table_schema + "." + table_name + "_last DROP CONSTRAINT " + table_name + "_last_pkey;"
-        self.mutex_db.acquire()
-        self.myCursor.execute(sql)
-        self.myDatabase.commit()
-        self.mutex_db.release()
+        # Add primary key to "_last" table
         sql = "ALTER TABLE " + table_schema + "." + table_name + "_last ADD PRIMARY KEY (" + primary_key + ");"
         self.mutex_db.acquire()
         self.myCursor.execute(sql)
