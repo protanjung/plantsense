@@ -444,12 +444,15 @@ class InterfaceDatabase():
         _column_parameters = ['SERIAL NOT NULL', 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP']
         self.db_create_table(table_schema, table_name + "_last", _column_names + column_names, _column_parameters + column_parameters)
 
-        # Add primary key to "_last" table
-        sql = "ALTER TABLE " + table_schema + "." + table_name + "_last ADD PRIMARY KEY (" + primary_key + ");"
-        self.mutex_db.acquire()
-        self.myCursor.execute(sql)
-        self.myDatabase.commit()
-        self.mutex_db.release()
+        try:
+            # Add primary key to "_last" table
+            sql = "ALTER TABLE " + table_schema + "." + table_name + "_last ADD PRIMARY KEY (" + primary_key + ");"
+            self.mutex_db.acquire()
+            self.myCursor.execute(sql)
+            self.myDatabase.commit()
+            self.mutex_db.release()
+        except BaseException as e:
+            pass
 
         # ------------------------------
 
