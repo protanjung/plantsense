@@ -61,6 +61,17 @@ services:
     ports:
       - 9090:9090
 
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:v1.6.1
+    container_name: node_exporter
+    restart: always
+    network_mode: host
+    pid: host
+    volumes:
+      - '/:/host:ro,rslave'
+    command:
+      - '--path.rootfs=/host'
+
   grafana:
     image: grafana/grafana:10.0.2
     container_name: grafana
@@ -86,7 +97,7 @@ services:
     command: --cleanup --schedule "0 * * * *"
 
   plantsense:
-    image: protanjung/plantsense:latest
+    build: .
     container_name: plantsense
     restart: always
     environment:
@@ -98,16 +109,6 @@ services:
       - 5000:5000
       - 5001:5001
       - 8800:8800
-
-  ai:
-    image: messier12/pjb-ai:latest
-    container_name: ai
-    restart: always
-    environment:
-      TZ: "Asia/Jakarta"
-    volumes:
-      - ${HOME}/docker-data/ai_reports:/server/reports # Requested by Dion
-      - ${HOME}/docker-data/ai_models:/server/saved_models # Requested by Dion
 
 volumes:
   portainer-data:
