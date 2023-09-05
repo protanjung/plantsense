@@ -86,7 +86,7 @@ services:
     command: --cleanup --schedule "0 * * * *"
 
   plantsense:
-    image: protanjung/plantsense:latest
+    build: .
     container_name: plantsense
     restart: always
     environment:
