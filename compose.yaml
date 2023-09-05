@@ -99,16 +99,6 @@ services:
       - 5001:5001
       - 8800:8800
 
-  ai:
-    image: messier12/pjb-ai:latest
-    container_name: ai
-    restart: always
-    environment:
-      TZ: "Asia/Jakarta"
-    volumes:
-      - ${HOME}/docker-data/ai_reports:/server/reports # Requested by Dion
-      - ${HOME}/docker-data/ai_models:/server/saved_models # Requested by Dion
-
 volumes:
   portainer-data:
   grafana-var-lib-grafana:
