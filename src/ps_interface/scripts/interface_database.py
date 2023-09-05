@@ -138,7 +138,7 @@ class InterfaceDatabase():
 
         tbl_data_names = ["name", "value", "timestamp"]
         tbl_data_parameters = ["VARCHAR NOT NULL", "FLOAT NOT NULL", "TIMESTAMP NOT NULL"]
-        self.db_init_table(self.db_schema, "tbl_data", tbl_data_names, tbl_data_parameters)
+        self.db_init1_table(self.db_schema, "tbl_data", tbl_data_names, tbl_data_parameters, "name")
 
         # ==============================
         # Fuel Param
@@ -183,7 +183,7 @@ class InterfaceDatabase():
 
         tbl_fuel_realisasi_names = ["sfc", "mw", "result"]
         tbl_fuel_realisasi_parameters = ["FLOAT NOT NULL", "FLOAT NOT NULL", "JSON NOT NULL"]
-        self.db_init_table(self.db_schema, "tbl_fuel_realisasi", tbl_fuel_realisasi_names, tbl_fuel_realisasi_parameters)
+        self.db_init2_table(self.db_schema, "tbl_fuel_realisasi", tbl_fuel_realisasi_names, tbl_fuel_realisasi_parameters)
 
         # ==============================
         # Eval Kebocoran Feed Water
@@ -191,7 +191,7 @@ class InterfaceDatabase():
 
         tbl_eval_kebocoran_feed_water_names = ["m11_lp", "m11_hp", "m12_lp", "m12_hp", "m13_lp", "m13_hp", "leak11_lp", "leak11_hp", "leak12_lp", "leak12_hp", "leak13_lp", "leak13_hp"]
         tbl_eval_kebocoran_feed_water_parameters = ["FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL"]
-        self.db_init_table(self.db_schema, "tbl_eval_kebocoran_feed_water", tbl_eval_kebocoran_feed_water_names, tbl_eval_kebocoran_feed_water_parameters)
+        self.db_init2_table(self.db_schema, "tbl_eval_kebocoran_feed_water", tbl_eval_kebocoran_feed_water_names, tbl_eval_kebocoran_feed_water_parameters)
 
         # ==============================
         # Eval ST Heat Rate
@@ -199,7 +199,7 @@ class InterfaceDatabase():
 
         tbl_eval_st_heat_rate_names = ["blok1", "blok2", "blok3", "total"]
         tbl_eval_st_heat_rate_parameters = ["FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL"]
-        self.db_init_table(self.db_schema, "tbl_eval_st_heat_rate", tbl_eval_st_heat_rate_names, tbl_eval_st_heat_rate_parameters)
+        self.db_init2_table(self.db_schema, "tbl_eval_st_heat_rate", tbl_eval_st_heat_rate_names, tbl_eval_st_heat_rate_parameters)
 
         # ==============================
         # Eval Anomali BFP
@@ -207,7 +207,7 @@ class InterfaceDatabase():
 
         tbl_eval_anomali_bfp_names = ["motor_a", "motor_b", "motor_c", "motor_d", "prediksi_rasio_motor_a", "prediksi_rasio_motor_b", "prediksi_rasio_motor_c", "prediksi_rasio_motor_d", "rasio_motor_a", "rasio_motor_b", "rasio_motor_c", "rasio_motor_d"]
         tbl_eval_anomali_bfp_parameters = ["INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL"]
-        self.db_init_table(self.db_schema, "tbl_eval_anomali_bfp", tbl_eval_anomali_bfp_names, tbl_eval_anomali_bfp_parameters)
+        self.db_init2_table(self.db_schema, "tbl_eval_anomali_bfp", tbl_eval_anomali_bfp_names, tbl_eval_anomali_bfp_parameters)
 
         # ==============================
         # Eval Kebocoran HRSG
@@ -215,7 +215,7 @@ class InterfaceDatabase():
 
         tbl_eval_kebocoran_hrsg_names = ["leak_11", "leak_12", "leak_13"]
         tbl_eval_kebocoran_hrsg_parameters = ["INT NOT NULL", "INT NOT NULL", "INT NOT NULL"]
-        self.db_init_table(self.db_schema, "tbl_eval_kebocoran_hrsg", tbl_eval_kebocoran_hrsg_names, tbl_eval_kebocoran_hrsg_parameters)
+        self.db_init2_table(self.db_schema, "tbl_eval_kebocoran_hrsg", tbl_eval_kebocoran_hrsg_names, tbl_eval_kebocoran_hrsg_parameters)
 
         # ==============================
         # Eval Kebocoran Kondensor
@@ -223,7 +223,7 @@ class InterfaceDatabase():
 
         tbl_eval_kebocoran_kondensor_names = ["value"]
         tbl_eval_kebocoran_kondensor_parameters = ["INT NOT NULL"]
-        self.db_init_table(self.db_schema, "tbl_eval_kebocoran_kondensor", tbl_eval_kebocoran_kondensor_names, tbl_eval_kebocoran_kondensor_parameters)
+        self.db_init2_table(self.db_schema, "tbl_eval_kebocoran_kondensor", tbl_eval_kebocoran_kondensor_names, tbl_eval_kebocoran_kondensor_parameters)
 
         # ==============================
         # Eval CWP
@@ -239,9 +239,9 @@ class InterfaceDatabase():
 
         tbl_inference_output_names = ["flame_out", "gagal_naik", "trip", "cv174_sv", "cv174_fb", "cv165_sv", "cv165_fb", "fuel_gas_flow", "cv147a_sv", "cv147a_fb", "cv147b_sv", "cv147b_fb", "cv135a_sv", "cv135a_fb", "fuel_oil_flow", "comb_shell_press", "bp_avg_temp", "log"]
         tbl_inference_output_parameters = ["INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "VARCHAR NOT NULL"]
-        self.db_init_table(self.db_schema, "tbl_inference_output_11", tbl_inference_output_names, tbl_inference_output_parameters)
-        self.db_init_table(self.db_schema, "tbl_inference_output_12", tbl_inference_output_names, tbl_inference_output_parameters)
-        self.db_init_table(self.db_schema, "tbl_inference_output_13", tbl_inference_output_names, tbl_inference_output_parameters)
+        self.db_init2_table(self.db_schema, "tbl_inference_output_11", tbl_inference_output_names, tbl_inference_output_parameters)
+        self.db_init2_table(self.db_schema, "tbl_inference_output_12", tbl_inference_output_names, tbl_inference_output_parameters)
+        self.db_init2_table(self.db_schema, "tbl_inference_output_13", tbl_inference_output_names, tbl_inference_output_parameters)
 
         # ==============================
         # Status Logic Nodes
@@ -430,7 +430,93 @@ class InterfaceDatabase():
 
     # --------------------------------------------------------------------------
 
-    def db_init_table(self, table_schema, table_name, column_names, column_parameters):
+    def db_init1_table(self, table_schema, table_name, column_names, column_parameters, primary_key):
+        if not self.is_create_table:
+            return
+
+        _column_names = ['id', 'timestamp_local']
+        _column_parameters = ['SERIAL NOT NULL PRIMARY KEY', 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP']
+
+        # Create table
+        self.db_create_table(table_schema, table_name, _column_names + column_names, _column_parameters + column_parameters)
+        self.db_create_table(table_schema, table_name + "_last1800sec", _column_names + column_names, _column_parameters + column_parameters)
+        self.db_create_table(table_schema, table_name + "_last", _column_names + column_names, _column_parameters + column_parameters)
+
+        # Change primary key of "_last" table to "primary_key" column
+        sql = "ALTER TABLE " + table_schema + "." + table_name + "_last DROP CONSTRAINT " + table_name + "_last_pkey;"
+        self.mutex_db.acquire()
+        self.myCursor.execute(sql)
+        self.myDatabase.commit()
+        self.mutex_db.release()
+        sql = "ALTER TABLE " + table_schema + "." + table_name + "_last ADD PRIMARY KEY (" + primary_key + ");"
+        self.mutex_db.acquire()
+        self.myCursor.execute(sql)
+        self.myDatabase.commit()
+        self.mutex_db.release()
+
+        # ------------------------------
+
+        # Create function to insert into "_last1800sec" and upsert into "_last" table
+        sql = "CREATE OR REPLACE FUNCTION " + table_name + "_insert() RETURNS TRIGGER AS $$ BEGIN "
+        sql += "INSERT INTO " + table_schema + "." + table_name + "_last1800sec ("
+        for i in range(len(column_names)):
+            sql += column_names[i]
+            if i != len(column_names) - 1:
+                sql += ", "
+        sql += ") VALUES ("
+        for i in range(len(column_names)):
+            sql += "NEW." + column_names[i]
+            if i != len(column_names) - 1:
+                sql += ", "
+        sql += "); "
+        sql += "INSERT INTO " + table_schema + "." + table_name + "_last ("
+        for i in range(len(column_names)):
+            sql += column_names[i]
+            if i != len(column_names) - 1:
+                sql += ", "
+        sql += ") VALUES ("
+        for i in range(len(column_names)):
+            sql += "NEW." + column_names[i]
+            if i != len(column_names) - 1:
+                sql += ", "
+        sql += ") ON CONFLICT (" + primary_key + ") DO UPDATE SET "
+        for i in range(len(column_names)):
+            sql += column_names[i] + " = NEW." + column_names[i]
+            if i != len(column_names) - 1:
+                sql += ", "
+        sql += "; "
+        sql += "RETURN NEW; END; $$ LANGUAGE plpgsql;"
+        self.mutex_db.acquire()
+        self.myCursor.execute(sql)
+        self.myDatabase.commit()
+        self.mutex_db.release()
+
+        # Create trigger to insert into "_last1800sec" and upsert into "_last" table
+        sql = "CREATE OR REPLACE TRIGGER " + table_name + "_insert AFTER INSERT ON " + table_schema + "." + table_name + " FOR EACH ROW EXECUTE PROCEDURE " + table_name + "_insert();"
+        self.mutex_db.acquire()
+        self.myCursor.execute(sql)
+        self.myDatabase.commit()
+        self.mutex_db.release()
+
+        # ------------------------------
+
+        # Create function to delete from "_last1800sec" table
+        sql = "CREATE OR REPLACE FUNCTION " + table_name + "_delete_1800sec() RETURNS TRIGGER AS $$ BEGIN "
+        sql += "DELETE FROM " + table_schema + "." + table_name + "_last1800sec WHERE timestamp_local < NOW() - INTERVAL '1800 seconds'; "
+        sql += "RETURN NEW; END; $$ LANGUAGE plpgsql;"
+        self.mutex_db.acquire()
+        self.myCursor.execute(sql)
+        self.myDatabase.commit()
+        self.mutex_db.release()
+
+        # Create trigger to delete from "_last1800sec" table
+        sql = "CREATE OR REPLACE TRIGGER " + table_name + "_delete_1800sec BEFORE INSERT ON " + table_schema + "." + table_name + "_last1800sec FOR EACH ROW EXECUTE PROCEDURE " + table_name + "_delete_1800sec();"
+        self.mutex_db.acquire()
+        self.myCursor.execute(sql)
+        self.myDatabase.commit()
+        self.mutex_db.release()
+
+    def db_init2_table(self, table_schema, table_name, column_names, column_parameters):
         if not self.is_create_table:
             return
 
