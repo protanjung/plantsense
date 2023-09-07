@@ -110,7 +110,7 @@ class InterfaceDatabase():
         tbl_param_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "VARCHAR NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_param", tbl_param_names, tbl_param_parameters)
 
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["fuel_megawatt_tag_manual", ""], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["fuel_megawatt_tag_manual", "P.B11GTHRSG.G1LA00264;P.B12GTHRSG.G2LA00264;P.B13GTHRSG.G3LA00264;P.B21GTHRSG.G1LA00264;P.B22GTHRSG.G2LA00264;P.B23GTHRSG.G3LA00264;P.B31GTHRSG.G1LA00264;P.B32GTHRSG.G2LA00264;P.B33GTHRSG.G3LA00264;"], "name")
         self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["fuel_megawatt_value_manual", "750.0"], "name")
         self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["fuel_sfc", "0.009"], "name")
 
@@ -127,10 +127,18 @@ class InterfaceDatabase():
         self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_diff_feed_water_to_steam_flow_threshold_12", "11"], "name")
         self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_diff_feed_water_to_steam_flow_threshold_13", "15"], "name")
 
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_level_uptrend_threshold", "0.05"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_level_downtrend_threshold", "-0.05"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_level_uptrend_threshold", "0.05"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_level_downtrend_threshold", "-0.05"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_level_uptrend_threshold_11", "0.5"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_level_uptrend_threshold_12", "0.5"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_level_uptrend_threshold_13", "0.5"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_level_downtrend_threshold_11", "-1000.0"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_level_downtrend_threshold_12", "-1000.0"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_level_downtrend_threshold_13", "-1000.0"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_level_uptrend_threshold_11", "0.5"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_level_uptrend_threshold_12", "0.5"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_level_uptrend_threshold_13", "0.5"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_level_downtrend_threshold_11", "-1000.0"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_level_downtrend_threshold_12", "-1000.0"], "name")
+        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_level_downtrend_threshold_13", "-1000.0"], "name")
 
         # ==============================
         # Data
