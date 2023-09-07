@@ -176,7 +176,7 @@ class Routine():
     # --------------------------------------------------------------------------
 
     def routine_init(self):
-        time.sleep(5.0)
+        time.sleep(10.0)
 
         # Flask
         flask_thread = threading.Thread(target=self.thread_flask)
