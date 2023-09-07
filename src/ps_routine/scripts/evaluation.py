@@ -51,7 +51,7 @@ class Evaluation:
     # --------------------------------------------------------------------------
 
     def evaluation_init(self):
-        time.sleep(2.0)
+        time.sleep(5.0)
 
         return 0
 
