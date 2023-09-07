@@ -11,6 +11,8 @@ services:
     ports:
       - 8000:8000
       - 9443:9443
+    networks:
+      - soket_network
 
   postgres:
     image: postgres:15
@@ -26,6 +28,8 @@ services:
       - posgres-var-lib-postgresql-data:/var/lib/postgresql/data
     ports:
       - 5432:5432
+    networks:
+      - soket_network
 
   adminer:
     image: adminer:4.8.1
@@ -35,6 +39,8 @@ services:
       TZ: "Asia/Jakarta"
     ports:
       - 8080:8080
+    networks:
+      - soket_network
 
   filebrowser:
     image: filebrowser/filebrowser:v2
@@ -48,6 +54,8 @@ services:
       - ${HOME}/docker-data:/srv
     ports:
       - 8081:80
+    networks:
+      - soket_network
 
   prometheus:
     image: prom/prometheus:v2.43.0
@@ -60,6 +68,8 @@ services:
       - prometheus-prometheus:/prometheus
     ports:
       - 9090:9090
+    networks:
+      - soket_network
 
   node_exporter:
     image: quay.io/prometheus/node-exporter:v1.6.1
@@ -85,6 +95,8 @@ services:
       - ${HOME}/docker-data/grafana_bg:/usr/share/grafana/public/img/bg # Requested by Taufik
     ports:
       - 3000:3000
+    networks:
+      - soket_network
 
   watchtower:
     image: containrrr/watchtower:latest
@@ -95,9 +107,11 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     command: --cleanup --schedule "0 * * * *"
+    networks:
+      - soket_network
 
   plantsense:
-    build: .
+    image: protanjung/plantsense:latest
     container_name: plantsense
     restart: always
     environment:
@@ -109,6 +123,8 @@ services:
       - 5000:5000
       - 5001:5001
       - 8800:8800
+    networks:
+      - soket_network
 
 volumes:
   portainer-data:
@@ -117,3 +133,7 @@ volumes:
   grafana-var-log-grafana:
   prometheus-prometheus:
   posgres-var-lib-postgresql-data:
+
+networks:
+  soket_network:
+    external: true

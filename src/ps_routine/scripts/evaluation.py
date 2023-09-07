@@ -218,6 +218,9 @@ class Evaluation:
         tag_cso_lcv_hp = [["P.B11GTHRSG.H1AO00005"],
                           ["P.B12GTHRSG.H2AO00005"],
                           ["P.B13GTHRSG.H3AO00005"]]
+        tag_cso_lcv_hp_sub = [["P.B11GTHRSG.H1LA00400"],
+                              ["P.B12GTHRSG.H2LA00400"],
+                              ["P.B13GTHRSG.H3LA00400"]]
 
         isclose_cso_lcv_lp = []
         isclose_cso_lcv_hp = []
@@ -226,8 +229,9 @@ class Evaluation:
             for i in range(3):
                 raw_cso_lcv_lp = self.get_raw_data_last(tag_cso_lcv_lp[i]).iloc[0, 0]
                 raw_cso_lcv_hp = self.get_raw_data_last(tag_cso_lcv_hp[i]).iloc[0, 0]
+                raw_cso_lcv_hp_sub = self.get_raw_data_last(tag_cso_lcv_hp_sub[i]).iloc[0, 0]
                 isclose_cso_lcv_lp += [1 if raw_cso_lcv_lp < 0.01 else 0]
-                isclose_cso_lcv_hp += [1 if raw_cso_lcv_hp < 0.01 else 0]
+                isclose_cso_lcv_hp += [1 if (raw_cso_lcv_hp < 0.01 and raw_cso_lcv_hp_sub < 0.01) else 0]
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
@@ -235,10 +239,18 @@ class Evaluation:
 
         # ==============================
 
-        lp_level_uptrend_threshold = float(rospy.get_param("lp_level_uptrend_threshold", 0.1))
-        lp_level_downtrend_threshold = float(rospy.get_param("lp_level_downtrend_threshold", -0.1))
-        hp_level_uptrend_threshold = float(rospy.get_param("hp_level_uptrend_threshold", 0.1))
-        hp_level_downtrend_threshold = float(rospy.get_param("hp_level_downtrend_threshold", -0.1))
+        lp_level_uptrend_threshold = [float(rospy.get_param("lp_level_uptrend_threshold_11", 0.05)),
+                                      float(rospy.get_param("lp_level_uptrend_threshold_12", 0.05)),
+                                      float(rospy.get_param("lp_level_uptrend_threshold_13", 0.05))]
+        lp_level_downtrend_threshold = [float(rospy.get_param("lp_level_downtrend_threshold_11", -1000)),
+                                        float(rospy.get_param("lp_level_downtrend_threshold_12", -1000)),
+                                        float(rospy.get_param("lp_level_downtrend_threshold_13", -1000))]
+        hp_level_uptrend_threshold = [float(rospy.get_param("hp_level_uptrend_threshold_11", 0.05)),
+                                      float(rospy.get_param("hp_level_uptrend_threshold_12", 0.05)),
+                                      float(rospy.get_param("hp_level_uptrend_threshold_13", 0.05))]
+        hp_level_downtrend_threshold = [float(rospy.get_param("hp_level_downtrend_threshold_11", -1000)),
+                                        float(rospy.get_param("hp_level_downtrend_threshold_12", -1000)),
+                                        float(rospy.get_param("hp_level_downtrend_threshold_13", -1000))]
 
         tag_lp_level = [["P.B11GTHRSG.H1LA00274", "P.B11GTHRSG.H1LA00275", "P.B11GTHRSG.H1LA00276"],
                         ["P.B12GTHRSG.H2LA00274", "P.B12GTHRSG.H2LA00275", "P.B12GTHRSG.H2LA00276"],
@@ -260,8 +272,8 @@ class Evaluation:
                 median_hp_level = self.get_median_per_row(raw_hp_level)
                 m_c_lp_level += [self.linear_regression(median_lp_level)]
                 m_c_hp_level += [self.linear_regression(median_hp_level)]
-                trend_lp_level += [1 if m_c_lp_level[i][0] > lp_level_uptrend_threshold else -1 if m_c_lp_level[i][0] < lp_level_downtrend_threshold else 0]
-                trend_hp_level += [1 if m_c_hp_level[i][0] > hp_level_uptrend_threshold else -1 if m_c_hp_level[i][0] < hp_level_downtrend_threshold else 0]
+                trend_lp_level += [1 if m_c_lp_level[i][0] > lp_level_uptrend_threshold[i] else -1 if m_c_lp_level[i][0] < lp_level_downtrend_threshold[i] else 0]
+                trend_hp_level += [1 if m_c_hp_level[i][0] > hp_level_uptrend_threshold[i] else -1 if m_c_hp_level[i][0] < hp_level_downtrend_threshold[i] else 0]
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
