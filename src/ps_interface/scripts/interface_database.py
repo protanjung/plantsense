@@ -448,19 +448,12 @@ class InterfaceDatabase():
         self.db_create_table(table_schema, table_name, _column_names + column_names, _column_parameters + column_parameters)
         self.db_create_table(table_schema, table_name + "_last1800sec", _column_names + column_names, _column_parameters + column_parameters)
 
-        _column_names = ['id', 'timestamp_local']
-        _column_parameters = ['SERIAL NOT NULL', 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP']
-        self.db_create_table(table_schema, table_name + "_last", _column_names + column_names, _column_parameters + column_parameters)
-
-        try:
-            # Add primary key to "_last" table
-            sql = "ALTER TABLE " + table_schema + "." + table_name + "_last ADD PRIMARY KEY (" + primary_key + ");"
-            self.mutex_db.acquire()
-            self.myCursor.execute(sql)
-            self.myDatabase.commit()
-            self.mutex_db.release()
-        except BaseException as e:
-            pass
+        _column_names = ['id', 'timestamp_local'] + column_names
+        _column_parameters = ['SERIAL NOT NULL', 'TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP'] + column_parameters
+        for i in range(len(_column_names)):
+            if _column_names[i] == primary_key:
+                _column_parameters[i] = _column_parameters[i] + " PRIMARY KEY"
+        self.db_create_table(table_schema, table_name + "_last", _column_names, _column_parameters)
 
         # ------------------------------
 
