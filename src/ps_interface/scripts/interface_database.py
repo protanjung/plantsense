@@ -272,7 +272,7 @@ class InterfaceDatabase():
         # ==============================
 
         tbl_users_names = ["username", "password", "role", "last_login"]
-        tbl_users_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "VARCHAR NOT NULL", "VARCHAR NOT NULL", "TIMESTAMP NOT NULL"]
+        tbl_users_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "VARCHAR NOT NULL", "VARCHAR NOT NULL", "TIMESTAMPZ NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_users", tbl_users_names, tbl_users_parameters)
 
         return 0
