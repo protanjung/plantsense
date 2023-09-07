@@ -34,7 +34,7 @@ class Export():
     # --------------------------------------------------------------------------
 
     def export_init(self):
-        time.sleep(2.0)
+        time.sleep(5.0)
 
         # Flask
         flask_thread = threading.Thread(target=self.thread_flask)
