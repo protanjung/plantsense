@@ -106,39 +106,66 @@ class InterfaceDatabase():
         # Param
         # ==============================
 
-        tbl_param_names = ["name", "value"]
-        tbl_param_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "VARCHAR NOT NULL"]
+        tbl_param_names = ["name", "value", "alias", "unit"]
+        tbl_param_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "VARCHAR NOT NULL", "VARCHAR NOT NULL", "VARCHAR NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_param", tbl_param_names, tbl_param_parameters)
 
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["fuel_megawatt_tag_manual", "P.B11GTHRSG.G1LA00264;P.B12GTHRSG.G2LA00264;P.B13GTHRSG.G3LA00264;P.B21GTHRSG.G1LA00264;P.B22GTHRSG.G2LA00264;P.B23GTHRSG.G3LA00264;P.B31GTHRSG.G1LA00264;P.B32GTHRSG.G2LA00264;P.B33GTHRSG.G3LA00264;"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["fuel_megawatt_value_manual", "750.0"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["fuel_sfc", "0.009"], "name")
+        values = [
+            ['condensor_CEP_threshold', '0.8', 'Threshold Sensor Conduct CEP Out', 'uS'],
+            ['condensor_dea_in_threshold', '0.3', 'Threshold DEA In', 'uS'],
+            ['condensor_leak_threshold', '4', 'Threshold Sensor Leak Detector Conduct', 'uS'],
+            ['condensor_natrium_threshold', '5', 'Threshold Sensor Na Analyzer', 'ppB'],
+            ['fuel_megawatt_from_tag_manual', '510.3880023183301', '', ''],
+            ['fuel_megawatt_from_value_manual', '750.0', '', ''],
+            ['fuel_megawatt_tag_manual', 'P.B11GTHRSG.G1LA00264;P.B12GTHRSG.G2LA00264;P.B13GTHRSG.G3LA00264;P.B21GTHRSG.G1LA00264;P.B22GTHRSG.G2LA00264;P.B23GTHRSG.G3LA00264;P.B31GTHRSG.G1LA00264;P.B32GTHRSG.G2LA00264;P.B33GTHRSG.G3LA00264;', '', ''],
+            ['fuel_megawatt_value_manual', '750.0', '', ''],
+            ['fuel_result_from_tag_manual', '', '', ''],
+            ['fuel_result_from_value_manual', '', '', ''],
+            ['fuel_sfc', '0.009', '', ''],
+            ['fuel_volume_from_tag_manual', '110.24380850075929', '', ''],
+            ['fuel_volume_from_value_manual', '161.99999999999997', '', ''],
+            ['hp_diff_feed_water_to_steam_flow_threshold_11', '20', 'Threshold Selisih Flow Feedwater - Flow Steam HRSG 1.1 HP', 'Ton/Jam'],
+            ['hp_diff_feed_water_to_steam_flow_threshold_12', '30', 'Threshold Selisih Flow Feedwater - Flow Steam HRSG 1.2 HP', 'Ton/Jam'],
+            ['hp_diff_feed_water_to_steam_flow_threshold_13', '45', 'Threshold Selisih Flow Feedwater - Flow Steam HRSG 1.3 HP', 'Ton/Jam'],
+            ['hp_level_downtrend_threshold_11', '-1000.0', '', ''],
+            ['hp_level_downtrend_threshold_12', '-1000.0', '', ''],
+            ['hp_level_downtrend_threshold_13', '-1000.0', '', ''],
+            ['hp_level_uptrend_threshold_11', '0.05', 'Threshold Gradien Kenaikan Level Drum HRSG 1.1 HP', 'mm/detik'],
+            ['hp_level_uptrend_threshold_12', '0.05', 'Threshold Gradien Kenaikan Level Drum HRSG 1.2 HP', 'mm/detik'],
+            ['hp_level_uptrend_threshold_13', '0.05', 'Threshold Gradien Kenaikan Level Drum HRSG 1.3 HP', 'mm/detik'],
+            ['hrsg_leak_gt_threshold', '50', 'Threshold Beban Deteksi Kebocoran HRSG', 'MW'],
+            ['lp_diff_feed_water_to_steam_flow_threshold_11', '14', 'Threshold Selisih Flow Feedwater - Flow Steam HRSG 1.1 LP', 'Ton/Jam'],
+            ['lp_diff_feed_water_to_steam_flow_threshold_12', '11', 'Threshold Selisih Flow Feedwater - Flow Steam HRSG 1.2 LP', 'Ton/Jam'],
+            ['lp_diff_feed_water_to_steam_flow_threshold_13', '15', 'Threshold Selisih Flow Feedwater - Flow Steam HRSG 1.3 LP', 'Ton/Jam'],
+            ['lp_level_downtrend_threshold_11', '-1000.0', '', ''],
+            ['lp_level_downtrend_threshold_12', '-1000.0', '', ''],
+            ['lp_level_downtrend_threshold_13', '-1000.0', '', ''],
+            ['lp_level_uptrend_threshold_11', '0.05', 'Threshold Gradien Kenaikan Level Drum HRSG 1.1 LP', 'mm/detik'],
+            ['lp_level_uptrend_threshold_12', '0.05', 'Threshold Gradien Kenaikan Level Drum HRSG 1.2 LP', 'mm/detik'],
+            ['lp_level_uptrend_threshold_13', '0.05', 'Threshold Gradien Kenaikan Level Drum HRSG 1.3 LP', 'mm/detik'],
+            ['make_up_water_flow_threshold', '14', 'Threshold  Make Up Water', 'Ton/Jam'],
+            ['message_bfp_anomaly', 'Terdeteksi anomali flow pada BFP', 'Pesan Anomalsi BFP', ''],
+            ['message_condensor_leak', ' Terdeteksi anomali berupa kebocoran kondensor', 'Pesan Kebocoran Kondensor', ''],
+            ['message_feedwater_leak', 'Terdeteksi kebocoran pada CV Feed Water', 'Pesan Kebocoran Feedwater', ''],
+            ['message_gagal_start_flameout', 'Terdeteksi Gagal start karena Flameout ', 'Pesan Gagal Start karena Flame Out', ''],
+            ['message_gagal_start_gagal_naik', ' Terdeteksi gagal start karena RPM tidak naik', 'Pesan Gagal Start karena RPM Gagal Naik', ''],
+            ['message_gagal_start_trip', ' Terdeteksi anomali berupa Trip', 'Pesan Trip', ''],
+            ['message_hrsg_leak', ' Terdeteksi Kebocoran HRSG', 'Pesan Kebocoran HRSG', ''],
+            ['message_preheater_leak', ' ', 'Pesan Kebocoran Preheater', ''],
+            ['motor_A_bfp_ratio_threshold', '20', 'Threshold Rasio Motor A', 'Ton/Jam Ampere'],
+            ['motor_B_bfp_ratio_threshold', '20', 'Threshold Rasio Motor B', 'Ton/Jam Ampere'],
+            ['motor_C_bfp_ratio_threshold', '20', 'Threshold Rasio Motor C', 'Ton/Jam Ampere'],
+            ['motor_D_bfp_ratio_threshold', '20', 'Threshold Rasio Motor D', 'Ton/Jam Ampere'],
+            ['periode_make_up_water', '30', 'Periode Make Up Water Di Atas Threshold', 'Menit'],
+            ['periode_selisih_flow_watersteam', '20', 'Periode Selisih Flow Feedwater - Flow Steam Di Atas Threshold', 'Menit'],
+            ['periode_tren_kenaikan_level_drum', '10', 'Periode Tren Kenaikan Level Drum', 'Menit'],
+            ['periode_waktu_anomali_bfp', '60', 'Periode Waktu Anomali BFP', 'Detik'],
+            ['preheater_diff_dea_in_to_cep_threshold', '10', 'Threshold Selisih Daerator In - CEP Out', 'uS'],
+            ['RTS_tags', 'P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076;P.B11GTHRSG.S1DI00076', 'Tag untuk Ready To Start', ''],
+        ]
 
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["motor_A_bfp_ratio_threshold", "20"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["motor_B_bfp_ratio_threshold", "20"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["motor_C_bfp_ratio_threshold", "20"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["motor_D_bfp_ratio_threshold", "20"], "name")
-
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["make_up_water_flow_threshold", "14"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_diff_feed_water_to_steam_flow_threshold_11", "20"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_diff_feed_water_to_steam_flow_threshold_12", "30"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_diff_feed_water_to_steam_flow_threshold_13", "45"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_diff_feed_water_to_steam_flow_threshold_11", "14"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_diff_feed_water_to_steam_flow_threshold_12", "11"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_diff_feed_water_to_steam_flow_threshold_13", "15"], "name")
-
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_level_uptrend_threshold_11", "0.5"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_level_uptrend_threshold_12", "0.5"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_level_uptrend_threshold_13", "0.5"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_level_downtrend_threshold_11", "-1000.0"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_level_downtrend_threshold_12", "-1000.0"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["lp_level_downtrend_threshold_13", "-1000.0"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_level_uptrend_threshold_11", "0.5"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_level_uptrend_threshold_12", "0.5"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_level_uptrend_threshold_13", "0.5"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_level_downtrend_threshold_11", "-1000.0"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_level_downtrend_threshold_12", "-1000.0"], "name")
-        self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value"], ["hp_level_downtrend_threshold_13", "-1000.0"], "name")
+        for i in range(len(values)):
+            self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value", "alias", "unit"], values[i], "name")
 
         # ==============================
         # Data
