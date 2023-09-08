@@ -140,8 +140,8 @@ class Routine():
         # ----------
 
         try:
-            self.result_from_value_manual = json.dumps(self.optimize_fuel_active(self.fuel_sfc, self.megawatt_from_value_manual), indent=2)
-            self.result_from_tag_manual = json.dumps(self.optimize_fuel_active(self.fuel_sfc, self.megawatt_from_tag_manual), indent=2)
+            self.result_from_value_manual = json.dumps(self.optimize_fuel_queue(self.fuel_sfc, self.megawatt_from_value_manual), indent=2)
+            self.result_from_tag_manual = json.dumps(self.optimize_fuel_queue(self.fuel_sfc, self.megawatt_from_tag_manual), indent=2)
             self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_result_from_value_manual", str(self.result_from_value_manual)], "name")
             self.cli_db_upsert("tbl_param", ["name", "value"], ["fuel_result_from_tag_manual", str(self.result_from_tag_manual)], "name")
         except Exception as e:
