@@ -107,7 +107,7 @@ class InterfaceDatabase():
         # ==============================
 
         tbl_param_names = ["name", "value", "alias", "unit"]
-        tbl_param_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "VARCHAR NOT NULL", "VARCHAR NOT NULL", "VARCHAR NOT NULL"]
+        tbl_param_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "VARCHAR NOT NULL", "VARCHAR NOT NULL DEFAULT ''", "VARCHAR NOT NULL DEFAULT ''"]
         self.db_create_table(self.db_schema, "tbl_param", tbl_param_names, tbl_param_parameters)
 
         values = [
