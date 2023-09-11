@@ -282,8 +282,8 @@ class InterfaceDatabase():
         # Status Logic Nodes
         # ==============================
 
-        tbl_status_logic_nodes_names = ["name", "value"]
-        tbl_status_logic_nodes_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "INT NOT NULL"]
+        tbl_status_logic_nodes_names = ["name", "value", "investigate", "deskripsi", "id"]
+        tbl_status_logic_nodes_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "INT NOT NULL", "INT NOT NULL", "VARCHAR NOT NULL", "INT NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_status_logic_nodes", tbl_status_logic_nodes_names, tbl_status_logic_nodes_parameters)
 
         # ==============================
