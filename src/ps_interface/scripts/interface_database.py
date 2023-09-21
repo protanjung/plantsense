@@ -40,11 +40,16 @@ class InterfaceDatabase():
     # --------------------------------------------------------------------------
 
     def cllbck_tim_1hz(self, event):
-        response_json = self.db_select(self.db_schema, "tbl_param", ["name", "value"], "")
-        response_df = pd.read_json(response_json, orient="split")
+        try:
+            response_json = self.db_select(self.db_schema, "tbl_param", ["name", "value"], "")
+            response_df = pd.read_json(response_json, orient="split")
 
-        for i in range(len(response_df)):
-            rospy.set_param(str(response_df["name"][i]), str(response_df["value"][i]))
+            for i in range(len(response_df)):
+                rospy.set_param(str(response_df["name"][i]), str(response_df["value"][i]))
+        except BaseException as e:
+            rospy.logerr("cllbck_tim_1hz: " + str(e))
+            self.mutex_db.release()
+            self.db_maintain_connection()
 
     # --------------------------------------------------------------------------
 
@@ -54,6 +59,8 @@ class InterfaceDatabase():
             self.db_insert(self.db_schema, req.table_name, req.columns, req.values)
         except BaseException as e:
             rospy.logerr("db_insert: " + str(e))
+            self.mutex_db.release()
+            self.db_maintain_connection()
         return res
 
     def cllbck_srv_db_select(self, req):
@@ -62,6 +69,8 @@ class InterfaceDatabase():
             res.response = self.db_select(self.db_schema, req.table_name, req.columns, req.where)
         except BaseException as e:
             rospy.logerr("db_select: " + str(e))
+            self.mutex_db.release()
+            self.db_maintain_connection()
         return res
 
     def cllbck_srv_db_update(self, req):
@@ -70,14 +79,18 @@ class InterfaceDatabase():
             self.db_update(self.db_schema, req.table_name, req.columns, req.values, req.where)
         except BaseException as e:
             rospy.logerr("db_update: " + str(e))
+            self.mutex_db.release()
+            self.db_maintain_connection()
         return res
 
     def cllbck_srv_db_upsert(self, req):
         res = db_upsertResponse()
         try:
-            self.db_upsert(self.db_schema, req.table_name, req.columns, req.values, req.primary_key)
+            self.db_insert_update_on_conflict(self.db_schema, req.table_name, req.columns, req.values, req.primary_key)
         except BaseException as e:
             rospy.logerr("db_upsert: " + str(e))
+            self.mutex_db.release()
+            self.db_maintain_connection()
         return res
 
     def cllbck_srv_db_delete(self, req):
@@ -86,26 +99,19 @@ class InterfaceDatabase():
             self.db_delete(self.db_schema, req.table_name, req.where)
         except BaseException as e:
             rospy.logerr("db_delete: " + str(e))
+            self.mutex_db.release()
+            self.db_maintain_connection()
         return res
 
     # --------------------------------------------------------------------------
 
     def interface_database_init(self):
-        self.mutex_db.acquire()
-        self.myDatabase = psycopg2.connect(
-            host=self.db_host,
-            port=self.db_port,
-            user=self.db_user,
-            password=self.db_password,
-            database=self.db_database
-        )
-        self.myCursor = self.myDatabase.cursor()
-        self.mutex_db.release()
+        if self.db_connect() == -1:
+            return -1
 
         # ==============================
         # Param
         # ==============================
-
         tbl_param_names = ["name", "value", "alias", "unit"]
         tbl_param_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "VARCHAR NOT NULL", "VARCHAR NOT NULL DEFAULT ''", "VARCHAR NOT NULL DEFAULT ''"]
         self.db_create_table(self.db_schema, "tbl_param", tbl_param_names, tbl_param_parameters)
@@ -165,12 +171,11 @@ class InterfaceDatabase():
         ]
 
         for i in range(len(values)):
-            self.db_insert_if_not_exists(self.db_schema, "tbl_param", ["name", "value", "alias", "unit"], values[i], "name")
+            self.db_insert_do_nothing_on_conflict(self.db_schema, "tbl_param", ["name", "value", "alias", "unit"], values[i], "name")
 
         # ==============================
         # Data
         # ==============================
-
         tbl_data_names = ["name", "value", "timestamp"]
         tbl_data_parameters = ["VARCHAR NOT NULL", "FLOAT NOT NULL", "TIMESTAMP NOT NULL"]
         self.db_init1_table(self.db_schema, "tbl_data", tbl_data_names, tbl_data_parameters, "name")
@@ -178,7 +183,6 @@ class InterfaceDatabase():
         # ==============================
         # Fuel Param
         # ==============================
-
         tbl_fuel_param_names = ["name", "min_volume", "max_volume", "price"]
         tbl_fuel_param_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_fuel_param_active", tbl_fuel_param_names, tbl_fuel_param_parameters)
@@ -187,7 +191,6 @@ class InterfaceDatabase():
         # ==============================
         # Fuel Rencana
         # ==============================
-
         tbl_fuel_rencana_names = ["id", "timestamp_local", "date", "sfc"]
         for i in range(48):
             tbl_fuel_rencana_names.append("mw" + str(i))
@@ -205,9 +208,8 @@ class InterfaceDatabase():
         self.db_create_table(self.db_schema, "tbl_fuel_rencana", tbl_fuel_rencana_names, tbl_fuel_rencana_parameters)
 
         # ==============================
-        # Fuel Rencana SImple
+        # Fuel Rencana Simple
         # ==============================
-
         tbl_fuel_rencana_simple_names = ["id", "timestamp_local", "timestamp", "sfc", "mw", "result"]
         tbl_fuel_rencana_simple_parameters = ["SERIAL NOT NULL", "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP", "TIMESTAMP NOT NULL PRIMARY KEY", "FLOAT NOT NULL", "FLOAT NOT NULL", "JSON NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_fuel_rencana_simple", tbl_fuel_rencana_simple_names, tbl_fuel_rencana_simple_parameters)
@@ -215,7 +217,6 @@ class InterfaceDatabase():
         # ==============================
         # Fuel Realisasi
         # ==============================
-
         tbl_fuel_realisasi_names = ["sfc", "mw", "result"]
         tbl_fuel_realisasi_parameters = ["FLOAT NOT NULL", "FLOAT NOT NULL", "JSON NOT NULL"]
         self.db_init2_table(self.db_schema, "tbl_fuel_realisasi", tbl_fuel_realisasi_names, tbl_fuel_realisasi_parameters)
@@ -223,7 +224,6 @@ class InterfaceDatabase():
         # ==============================
         # Eval Kebocoran Feed Water
         # ==============================
-
         tbl_eval_kebocoran_feed_water_names = ["m11_lp", "m11_hp", "m12_lp", "m12_hp", "m13_lp", "m13_hp", "leak11_lp", "leak11_hp", "leak12_lp", "leak12_hp", "leak13_lp", "leak13_hp"]
         tbl_eval_kebocoran_feed_water_parameters = ["FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL"]
         self.db_init2_table(self.db_schema, "tbl_eval_kebocoran_feed_water", tbl_eval_kebocoran_feed_water_names, tbl_eval_kebocoran_feed_water_parameters)
@@ -231,7 +231,6 @@ class InterfaceDatabase():
         # ==============================
         # Eval ST Heat Rate
         # ==============================
-
         tbl_eval_st_heat_rate_names = ["blok1", "blok2", "blok3", "total"]
         tbl_eval_st_heat_rate_parameters = ["FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL"]
         self.db_init2_table(self.db_schema, "tbl_eval_st_heat_rate", tbl_eval_st_heat_rate_names, tbl_eval_st_heat_rate_parameters)
@@ -239,7 +238,6 @@ class InterfaceDatabase():
         # ==============================
         # Eval Anomali BFP
         # ==============================
-
         tbl_eval_anomali_bfp_names = ["motor_a", "motor_b", "motor_c", "motor_d", "prediksi_rasio_motor_a", "prediksi_rasio_motor_b", "prediksi_rasio_motor_c", "prediksi_rasio_motor_d", "rasio_motor_a", "rasio_motor_b", "rasio_motor_c", "rasio_motor_d"]
         tbl_eval_anomali_bfp_parameters = ["INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL"]
         self.db_init2_table(self.db_schema, "tbl_eval_anomali_bfp", tbl_eval_anomali_bfp_names, tbl_eval_anomali_bfp_parameters)
@@ -247,7 +245,6 @@ class InterfaceDatabase():
         # ==============================
         # Eval Kebocoran HRSG
         # ==============================
-
         tbl_eval_kebocoran_hrsg_names = ["leak_11", "leak_12", "leak_13"]
         tbl_eval_kebocoran_hrsg_parameters = ["INT NOT NULL", "INT NOT NULL", "INT NOT NULL"]
         self.db_init2_table(self.db_schema, "tbl_eval_kebocoran_hrsg", tbl_eval_kebocoran_hrsg_names, tbl_eval_kebocoran_hrsg_parameters)
@@ -255,7 +252,6 @@ class InterfaceDatabase():
         # ==============================
         # Eval Kebocoran Kondensor
         # ==============================
-
         tbl_eval_kebocoran_kondensor_names = ["value"]
         tbl_eval_kebocoran_kondensor_parameters = ["INT NOT NULL"]
         self.db_init2_table(self.db_schema, "tbl_eval_kebocoran_kondensor", tbl_eval_kebocoran_kondensor_names, tbl_eval_kebocoran_kondensor_parameters)
@@ -263,7 +259,6 @@ class InterfaceDatabase():
         # ==============================
         # Eval CWP
         # ==============================
-
         tbl_eval_cwp = ["konfigurasi_11", "konfigurasi_12", "konfigurasi_13", "rekomendasi_cwp"]
         tbl_eval_cwp_parameters = ["INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "INT NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_eval_cwp", tbl_eval_cwp, tbl_eval_cwp_parameters)
@@ -271,7 +266,6 @@ class InterfaceDatabase():
         # ==============================
         # Inference Output
         # ==============================
-
         tbl_inference_output_names = ["flame_out", "gagal_naik", "trip", "cv174_sv", "cv174_fb", "cv165_sv", "cv165_fb", "fuel_gas_flow", "cv147a_sv", "cv147a_fb", "cv147b_sv", "cv147b_fb", "cv135a_sv", "cv135a_fb", "fuel_oil_flow", "comb_shell_press", "bp_avg_temp", "log"]
         tbl_inference_output_parameters = ["INT NOT NULL", "INT NOT NULL", "INT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "FLOAT NOT NULL", "VARCHAR NOT NULL"]
         self.db_init2_table(self.db_schema, "tbl_inference_output_11", tbl_inference_output_names, tbl_inference_output_parameters)
@@ -281,15 +275,13 @@ class InterfaceDatabase():
         # ==============================
         # Status Logic Nodes
         # ==============================
-
-        tbl_status_logic_nodes_names = ["name", "value", "investigate", "deskripsi", "id"]
-        tbl_status_logic_nodes_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "INT NOT NULL", "INT NOT NULL", "VARCHAR NOT NULL", "INT NOT NULL"]
+        tbl_status_logic_nodes_names = ["name", "value", "investigate", "deskripsi", "id", "tag"]
+        tbl_status_logic_nodes_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "INT NOT NULL", "INT NOT NULL", "VARCHAR NOT NULL", "INT NOT NULL", "VARCHAR NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_status_logic_nodes", tbl_status_logic_nodes_names, tbl_status_logic_nodes_parameters)
 
         # ==============================
         # Status Report Read
         # ==============================
-
         tbl_status_report_read_names = ["name", "value"]
         tbl_status_report_read_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "INT NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_status_report_read", tbl_status_report_read_names, tbl_status_report_read_parameters)
@@ -297,11 +289,42 @@ class InterfaceDatabase():
         # ==============================
         # Users
         # ==============================
-
         tbl_users_names = ["username", "password", "role", "last_login"]
         tbl_users_parameters = ["VARCHAR NOT NULL PRIMARY KEY", "VARCHAR NOT NULL", "VARCHAR NOT NULL", "TIMESTAMPTZ NOT NULL"]
         self.db_create_table(self.db_schema, "tbl_users", tbl_users_names, tbl_users_parameters)
 
+        return 0
+
+    # --------------------------------------------------------------------------
+
+    def db_connect(self):
+        try:
+            self.mutex_db.acquire()
+            self.myDatabase = psycopg2.connect(host=self.db_host, port=self.db_port, user=self.db_user, password=self.db_password, database=self.db_database)
+            self.myCursor = self.myDatabase.cursor()
+            self.mutex_db.release()
+            rospy.loginfo("db_connect: OK")
+            return 0
+        except BaseException as e:
+            rospy.logerr("db_connect: " + str(e))
+            self.mutex_db.release()
+            return -1
+
+    def db_check_connection(self):
+        try:
+            self.mutex_db.acquire()
+            self.myCursor.execute("SELECT 1")
+            self.mutex_db.release()
+            rospy.loginfo("db_check_connection: OK")
+            return 0
+        except BaseException as e:
+            rospy.logerr("db_check_connection: " + str(e))
+            self.mutex_db.release()
+            return -1
+
+    def db_maintain_connection(self):
+        if self.db_check_connection() == -1:
+            return self.db_connect()
         return 0
 
     # --------------------------------------------------------------------------
@@ -416,7 +439,7 @@ class InterfaceDatabase():
         self.myDatabase.commit()
         self.mutex_db.release()
 
-    def db_upsert(self, table_schema, table_name, columns, values, primary_key):
+    def db_insert_update_on_conflict(self, table_schema, table_name, columns, values, primary_key):
         sql = "INSERT INTO " + table_schema + "." + table_name + " ("
         for i in range(len(columns)):
             sql += columns[i]
@@ -437,7 +460,7 @@ class InterfaceDatabase():
         self.myDatabase.commit()
         self.mutex_db.release()
 
-    def db_insert_if_not_exists(self, table_schema, table_name, columns, values, primary_key):
+    def db_insert_do_nothing_on_conflict(self, table_schema, table_name, columns, values, primary_key):
         sql = "INSERT INTO " + table_schema + "." + table_name + " ("
         for i in range(len(columns)):
             sql += columns[i]
