@@ -457,7 +457,13 @@ class Evaluation:
         temperature_ = temperature + 273
         pressure_ = pressure * 0.980665
 
-        return self.H2O.h(T=temperature_, p=pressure_)[0]
+        enthalpy = 0
+        try:
+            enthalpy = self.H2O.h(T=temperature_, p=pressure_)[0]
+        except BaseException:
+            pass
+
+        return enthalpy
 
     def get_heat_rate(self, lp_steam_enthalpy, hp_steam_enthalpy, gland_steam_enthalpy, lp_steam_flow, hp_steam_flow, mw):
         '''
@@ -474,7 +480,13 @@ class Evaluation:
         B = lp_steam_flow * 1000 * (lp_steam_enthalpy - gland_steam_enthalpy)
         C = mw
 
-        return (A + B) / C / 4186.8
+        heat_rate = 0
+        try:
+            heat_rate = (A + B) / C / 4186.8
+        except BaseException:
+            pass
+
+        return heat_rate
 
 
 if __name__ == "__main__":
