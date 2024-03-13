@@ -7,10 +7,12 @@ from ps_interface.srv import db_select, db_selectResponse
 from ps_interface.srv import db_update, db_updateResponse
 from ps_interface.srv import db_upsert, db_upsertResponse
 from ps_interface.srv import db_delete, db_deleteResponse
+import os
 import sys
 import time
 import json
 import threading
+import tabula
 import pandas as pd
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -190,6 +192,101 @@ class Routine():
 
     # --------------------------------------------------------------------------
 
+    def pdf_correct_inconsistent_data(self, df):
+        buffer = df.copy()
+
+        # Detect error by checking if there is a space in column header
+        i_error = -1
+        for i, column in enumerate(buffer.columns):
+            if " " in column:
+                i_error = i
+                break
+
+        # Correct error by splitting column header and value
+        if i_error != -1:
+            column0_header = buffer.columns[i_error].split(" ")[0]
+            column0_data = buffer.iloc[:, i_error].str.split(" ").str[0]
+            column1_header = buffer.columns[i_error].split(" ")[1]
+            column1_data = buffer.iloc[:, i_error].str.split(" ").str[1]
+            buffer.drop(columns=[buffer.columns[i_error]], inplace=True)
+            buffer.insert(i_error + 0, column0_header, column0_data)
+            buffer.insert(i_error + 1, column1_header, column1_data)
+
+        # Convert all data to numeric
+        try:
+            buffer = buffer.apply(pd.to_numeric, errors="coerce")
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
+            return -1, buffer
+
+        return 0, buffer
+
+    def pdf_remove_unwanted_data(self, df):
+        buffer = df.copy()
+
+        # Remove rows with column 0 and 1 values containing NaN
+        buffer.dropna(subset=[buffer.columns[0], buffer.columns[1]], inplace=True)
+        # Remove rows with column 0 values not containing 'PLTG', 'PLTGU', or 'PLTU'
+        row_indices = buffer[~buffer.iloc[:, 0].str.contains("PLTG|PLTGU|PLTU")].index.tolist()
+        buffer.drop(row_indices, inplace=True)
+        # Remove rows with column 1 values not containing 'GRESIK', or 'GRSIK'
+        row_indices = buffer[~buffer.iloc[:, 1].str.contains("GRESIK|GRSIK")].index.tolist()
+        buffer.drop(row_indices, inplace=True)
+        # Remove unnamed columns
+        column_indices = buffer.columns[buffer.columns.str.contains("Unnamed")].tolist()
+        buffer.drop(columns=column_indices, inplace=True)
+        # Remove column 'Jam' or 'Rata-2' if exists
+        if "Jam" in buffer.columns:
+            buffer.drop(columns=["Jam"], inplace=True)
+        if "Rata-2" in buffer.columns:
+            buffer.drop(columns=["Rata-2"], inplace=True)
+        # Reset index
+        buffer.reset_index(drop=True, inplace=True)
+
+        return 0, buffer
+
+    def pdf_parse_data(self):
+        try:
+            filename = os.path.join(os.path.expanduser("~"), "plantsense_roh.pdf")
+            df_siang = tabula.read_pdf(filename, pages=10)[0]
+            df_malam = tabula.read_pdf(filename, pages=19)[0]
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            rospy.logerr("Error: " + str(e) + " at " + str(exc_tb.tb_lineno))
+            return {"status": -1, "message": "Error: " + str(e) + " at " + str(exc_tb.tb_lineno)}, []
+
+        # Check if table column count is correct
+        if len(df_siang.columns) != 28 or len(df_malam.columns) != 27:
+            return {"status": -1, "message": "Jumlah kolom tidak sesuai"}, []
+
+        # Remove unwanted data
+        _, df_siang = self.pdf_remove_unwanted_data(df_siang)
+        _, df_malam = self.pdf_remove_unwanted_data(df_malam)
+
+        # Check if table row count is correct
+        if len(df_siang) != len(df_malam):
+            return {"status": -1, "message": "Jumlah baris tidak sesuai"}, []
+
+        # Correct inconsistent data
+        result, df_siang = self.pdf_correct_inconsistent_data(df_siang)
+        if result == -1:
+            return {"status": -1, "message": "Data tidak konsisten"}, []
+        result, df_malam = self.pdf_correct_inconsistent_data(df_malam)
+        if result == -1:
+            return {"status": -1, "message": "Data tidak konsisten"}, []
+
+        # Check if table column count is correct
+        if len(df_siang.columns) + len(df_malam.columns) != 48:
+            return {"status": -1, "message": "Jumlah kolom tidak sesuai"}, []
+
+        # Combine siang and malam data
+        df = pd.concat([df_siang, df_malam], axis=1)
+
+        return {"status": 0, "message": "Berhasil"}, df.sum(axis=0).tolist()
+
+    # --------------------------------------------------------------------------
+
     def optimize_fuel_active(self, sfc, megawatt):
         number_of_variables = len(self.df_fuel_param_active)
 
@@ -260,10 +357,16 @@ class Routine():
 
         # ----------
 
-        df_row.loc[0, "date"] = str(date)
-        df_row.loc[0, "sfc"] = str(sfc)
-        for i in range(48):
-            df_row.loc[0, "value" + str(i)] = json.dumps(self.optimize_fuel_queue(sfc, df_row.loc[0, "mw" + str(i)]), indent=2)
+        try:
+            df_row.loc[0, "date"] = str(date)
+            df_row.loc[0, "sfc"] = str(sfc)
+            for i in range(48):
+                df_row.loc[0, "value" + str(i)] = json.dumps(self.optimize_fuel_queue(sfc, df_row.loc[0, "mw" + str(i)]), indent=2)
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            return {"status": -1, "message": "Error: " + str(e) + " at " + str(exc_tb.tb_lineno)}
+
+        # ----------
 
         columns = []
         for i in df_row.columns.tolist()[2:]:
@@ -272,9 +375,69 @@ class Routine():
         for i in df_row.values.tolist()[0][2:]:
             values.append(str(i))
 
+        self.cli_db_update("tbl_fuel_rencana", columns, values, "date = '" + str(date) + "'")
+
         # ----------
 
-        self.cli_db_update("tbl_fuel_rencana", columns, values, "date = '" + str(date) + "'")
+        for i in range(48):
+            _timestamp = str(date) + " " + str(i // 2).zfill(2) + ":" + str(i % 2 * 30).zfill(2) + ":00"
+            _sfc = str(df_row.loc[0, "sfc"])
+            _mw = str(df_row.loc[0, "mw" + str(i)])
+            _result = str(df_row.loc[0, "value" + str(i)])
+
+            self.cli_db_upsert("tbl_fuel_rencana_simple", ["timestamp", "sfc", "mw", "result"], [_timestamp, _sfc, _mw, _result], "timestamp")
+
+        # ----------
+
+        return {"status": 0, "message": "Berhasil"}
+
+    def trigger_fuel_pdf(self, date=None, sfc=None):
+        if date is None:
+            date = time.strftime("%Y-%m-%d", time.localtime())
+        if sfc is None:
+            sfc = self.fuel_sfc
+
+        # ----------
+
+        result, megawatt = self.pdf_parse_data()
+        if len(megawatt) == 0:
+            return result
+
+        # ----------
+
+        header = []
+        header.append("date")
+        header.append("sfc")
+        for i in range(48):
+            header.append("mw" + str(i))
+            header.append("value" + str(i))
+        header.append("mw_total")
+        header.append("value_total")
+
+        df_row = pd.DataFrame(columns=header)
+
+        try:
+            df_row.loc[0, "date"] = str(date)
+            df_row.loc[0, "sfc"] = str(sfc)
+            for i in range(48):
+                df_row.loc[0, "mw" + str(i)] = str(megawatt[i])
+                df_row.loc[0, "value" + str(i)] = json.dumps(self.optimize_fuel_queue(sfc, megawatt[i]), indent=2)
+            df_row.loc[0, "mw_total"] = str(sum(megawatt))
+            df_row.loc[0, "value_total"] = "{}"
+        except Exception as e:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            return {"status": -1, "message": "Error: " + str(e) + " at " + str(exc_tb.tb_lineno)}
+
+        # ----------
+
+        columns = []
+        for i in df_row.columns.tolist():
+            columns.append(str(i))
+        values = []
+        for i in df_row.values.tolist()[0]:
+            values.append(str(i))
+
+        self.cli_db_upsert("tbl_fuel_rencana", columns, values, "date")
 
         # ----------
 
@@ -302,6 +465,31 @@ class Routine():
         param["sfc"] = str(request.form["sfc"]) if "sfc" in request.form else None
 
         result = routine.trigger_fuel(param["date"], param["sfc"])
+        return jsonify(result)
+
+    @app.route("/trigger_pdf", methods=["POST"])
+    def flask_trigger_pdf():
+        param = {}
+        param["date"] = str(request.form["date"]) if "date" in request.form else None
+        param["sfc"] = str(request.form["sfc"]) if "sfc" in request.form else None
+
+        # Check if file parameter is empty
+        if 'file' not in request.files:
+            return jsonify({"status": -1, "message": "Parameter 'file' harus diisi"})
+
+        file = request.files['file']
+
+        # Check if file is empty
+        if file.filename == '':
+            return jsonify({"status": -1, "message": "File tidak boleh kosong"})
+        # Check if file is PDF
+        if file.filename.split(".")[-1].lower() != "pdf":
+            return jsonify({"status": -1, "message": "File harus berformat PDF"})
+
+        filename = os.path.join(os.path.expanduser("~"), "plantsense_roh.pdf")
+        file.save(filename)
+
+        result = routine.trigger_fuel_pdf(param["date"], param["sfc"])
         return jsonify(result)
 
     @app.route("/optimize", methods=["POST"])
