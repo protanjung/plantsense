@@ -4,6 +4,7 @@ RUN apt update \
     && apt install -y \
     libpq-dev \
     python3-pip \
+    openjdk-11-jre-headless \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install \
@@ -13,8 +14,9 @@ RUN pip3 install \
     prometheus_client \
     flask \
     flask_cors \
-    pulp \ 
-    pyromat
+    pulp \
+    pyromat \
+    tabula-py
 
 RUN mkdir -p /root/plantsense
 COPY ./src /root/plantsense/src
